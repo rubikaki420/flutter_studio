@@ -1,20 +1,177 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:flutter_studio/librarys/style.dart';
+import 'package:flutter/foundation.dart';
+import 'package:path/path.dart' as path;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:path/path.dart' as path;
 import 'package:flutter_studio/util/file_icons.dart';
-import 'package:flutter_studio/librarys/style.dart';
-import 'tree_view.dart';
-import 'models/tree_node.dart';
 
-class DirectoryTreeViewer extends StatefulWidget {
+late bool isParentOpen;
+String? currentDir;
+
+class DirectoryTreeViewer extends StatelessWidget {
+  /// The root path of the directory to display.
   final String rootPath;
+
+  /// Initial state of the [DirectoryTreeViewer].
+  /// isUnfoldedFirst = true by defualt
   final bool isUnfoldedFirst;
+
+  /// Enables folder creation option
   final bool enableCreateFolderOption;
+
+  /// Enables file creation option
   final bool enableCreateFileOption;
+
+  ///Enables folder deletion option
   final bool enableDeleteFolderOption;
+
+  /// Enables file deletion option
   final bool enableDeleteFileOption;
+
+  /// Customizable folder styling
+  final FolderStyle? folderStyle;
+
+  /// Customizable file styling
+  final FileStyle? fileStyle;
+
+  /// Custom styling for text editing field.
+  final EditingFieldStyle? editingFieldStyle;
+
+  /// Callback function when a file is tapped. Accepts a [File] and [TapDownDetails] as parameters.
+  final void Function(File, TapDownDetails)? onFileTap;
+
+  /// Callback function when a file is right-clicked.
+  final void Function(File, TapDownDetails)? onFileSecondaryTap;
+
+  /// Callback function when a directory is tapped.
+  final void Function(Directory, TapDownDetails)? onDirTap;
+
+  /// Callback function when a directory is right-clicked.
+  final void Function(Directory, TapDownDetails)? onDirSecondaryTap;
+
+  ///Additional folder action widgets
+  final List<Widget>? folderActions;
+
+  ///Additional file action widgets
+  final List<Widget>? fileActions;
+
+  /// A function that returns a custom file icon based on the file extension.
+  final Widget Function(String fileExtension)? fileIconBuilder;
+
+  /// Constructs a [DirectoryTreeViewer] with the given properties.
+  const DirectoryTreeViewer({
+    super.key,
+    required this.rootPath,
+    this.onFileTap,
+    this.onFileSecondaryTap,
+    this.onDirTap,
+    this.onDirSecondaryTap,
+    this.folderActions,
+    this.fileActions,
+    this.folderStyle,
+    this.fileStyle,
+    this.isUnfoldedFirst = true,
+    this.editingFieldStyle,
+    this.enableCreateFileOption = true,
+    this.enableCreateFolderOption = false,
+    this.enableDeleteFileOption = true,
+    this.enableDeleteFolderOption = true,
+    this.fileIconBuilder,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    /// Check if the platform is Web or WASM, and display a message if it is.
+    if (kIsWasm || kIsWeb) {
+      return const AlertDialog(title: Text("Web platform is not supported"));
+    }
+    isParentOpen = isUnfoldedFirst;
+    return DirectoryTreeStateProvider(
+      notifier: DirectoryTreeStateNotifier(),
+      child: FoldableDirectoryTree(
+        folderStyle: folderStyle,
+        fileStyle: fileStyle,
+        editingFieldStyle: editingFieldStyle,
+        enableCreateFolderOption: enableCreateFolderOption,
+        enableCreateFileOption: enableCreateFileOption,
+        enableDeleteFileOption: enableDeleteFileOption,
+        enableDeleteFolderOption: enableDeleteFolderOption,
+        folderActions: folderActions,
+        fileActions: fileActions,
+        rootPath: rootPath,
+        onFileTap: onFileTap,
+        onFileSecondaryTap: onFileSecondaryTap,
+        onDirTap: onDirTap,
+        onDirSecondaryTap: onDirSecondaryTap,
+        fileIconBuilder: fileIconBuilder,
+      ),
+    );
+  }
+}
+
+/// Manages the state of the directory tree, handling folder expansion and file operations.
+class DirectoryTreeStateNotifier extends ChangeNotifier {
+  ///// Tracks open/close state of folders
+  final Map<String, bool> _folderStates = {};
+
+  ///Watches for file system changes
+  StreamSubscription<FileSystemEvent>? _directoryWatcher;
+
+  /// Checks if a folder is expanded or collapsed
+  bool isUnfolded(String dirPath, String rootPath) => dirPath == rootPath
+      ? _folderStates[rootPath] = isParentOpen
+      : (_folderStates[dirPath] ?? false);
+
+  /// Toggles folder expansion/collapse state
+  void toggleFolder(String dirPath, String rootPath) {
+    if (dirPath != rootPath) {
+      _folderStates[dirPath] = !(_folderStates[dirPath] ?? false);
+    }
+    notifyListeners();
+  }
+
+  /// Watches the given directory for changes and updates the UI accordingly
+  void watchDirectory(String directoryPath) {
+    _directoryWatcher?.cancel();
+    final dir = Directory(directoryPath);
+    if (dir.existsSync()) {
+      _directoryWatcher = dir.watch(recursive: true).listen((event) {
+        if (event is FileSystemCreateEvent ||
+            event is FileSystemModifyEvent ||
+            event is FileSystemDeleteEvent) {
+          notifyListeners();
+        }
+      });
+    }
+  }
+}
+
+/// A provider that supplies [DirectoryTreeStateNotifier] to its descendants in the widget tree.
+class DirectoryTreeStateProvider
+    extends InheritedNotifier<DirectoryTreeStateNotifier> {
+  /// Constructs a [DirectoryTreeStateProvider] with the given notifier and child widget.
+  const DirectoryTreeStateProvider({
+    super.key,
+    required DirectoryTreeStateNotifier super.notifier,
+    required super.child,
+  });
+
+  /// Accesses the [DirectoryTreeStateNotifier] in the widget tree.
+  static DirectoryTreeStateNotifier of(BuildContext context) {
+    final provider = context
+        .dependOnInheritedWidgetOfExactType<DirectoryTreeStateProvider>();
+    assert(provider != null, 'No DirectoryTreeStateProvider found in context');
+    return provider!.notifier!;
+  }
+}
+
+/// A widget that displays a foldable directory tree, showing files and subdirectories.
+class FoldableDirectoryTree extends StatefulWidget {
+  final String rootPath;
+  final bool enableCreateFolderOption, enableCreateFileOption;
+  final bool enableDeleteFolderOption, enableDeleteFileOption;
   final FolderStyle? folderStyle;
   final FileStyle? fileStyle;
   final EditingFieldStyle? editingFieldStyle;
@@ -22,88 +179,35 @@ class DirectoryTreeViewer extends StatefulWidget {
   final void Function(File, TapDownDetails)? onFileSecondaryTap;
   final void Function(Directory, TapDownDetails)? onDirTap;
   final void Function(Directory, TapDownDetails)? onDirSecondaryTap;
+  final List<Widget>? folderActions;
+  final List<Widget>? fileActions;
+  final Widget Function(String fileExtension)? fileIconBuilder;
 
-  const DirectoryTreeViewer({
+  const FoldableDirectoryTree({
     super.key,
     required this.rootPath,
-    this.isUnfoldedFirst = true,
-    this.enableCreateFolderOption = false,
-    this.enableCreateFileOption = true,
-    this.enableDeleteFolderOption = true,
-    this.enableDeleteFileOption = true,
-    this.folderStyle,
-    this.fileStyle,
-    this.editingFieldStyle,
     this.onFileTap,
     this.onFileSecondaryTap,
     this.onDirTap,
     this.onDirSecondaryTap,
+    this.folderStyle,
+    this.fileStyle,
+    this.folderActions,
+    this.fileActions,
+    this.editingFieldStyle,
+    this.enableCreateFileOption = false,
+    this.enableCreateFolderOption = false,
+    this.enableDeleteFileOption = false,
+    this.enableDeleteFolderOption = false,
+    this.fileIconBuilder,
   });
 
   @override
-  State<DirectoryTreeViewer> createState() => _DirectoryTreeViewerState();
+  State<FoldableDirectoryTree> createState() => _FoldableDirectoryTreeState();
 }
 
-class _DirectoryTreeViewerState extends State<DirectoryTreeViewer> {
-  late TreeNode<FileSystemEntity> _rootNode;
-  StreamSubscription<FileSystemEvent>? _directoryWatcher;
-
-  @override
-  void initState() {
-    super.initState();
-    _refreshTree();
-    _startWatching();
-  }
-
-  @override
-  void dispose() {
-    _directoryWatcher?.cancel();
-    super.dispose();
-  }
-
-  void _refreshTree() {
-    setState(() {
-      _rootNode = TreeNode<FileSystemEntity>(
-        value: Directory(widget.rootPath),
-        isExpanded: widget.isUnfoldedFirst,
-      );
-      _populateNode(_rootNode);
-    });
-  }
-
-  void _startWatching() {
-    _directoryWatcher?.cancel();
-    final dir = Directory(widget.rootPath);
-    if (dir.existsSync()) {
-      _directoryWatcher = dir.watch(recursive: true).listen((event) {
-        _refreshTree();
-      });
-    }
-  }
-
-  void _populateNode(TreeNode<FileSystemEntity> node) {
-    final entity = node.value;
-    if (entity is Directory) {
-      try {
-        final entities = entity.listSync();
-        entities.sort((a, b) {
-          if (a is Directory && b is File) return -1;
-          if (a is File && b is Directory) return 1;
-          return a.path.compareTo(b.path);
-        });
-        for (var e in entities) {
-          final childNode = TreeNode<FileSystemEntity>(value: e);
-          node.addChild(childNode);
-          if (e is Directory) {
-            _populateNode(childNode);
-          }
-        }
-      } catch (e) {
-        // Silently ignore errors
-      }
-    }
-  }
-
+/// Recursively builds the directory tree for a given [directory] using [stateNotifier] to manage folder states.
+class _FoldableDirectoryTreeState extends State<FoldableDirectoryTree> {
   Future<void> _showCreateRenameDialog({
     required FileSystemEntity entity,
     bool isFolder = false,
@@ -143,31 +247,19 @@ class _DirectoryTreeViewerState extends State<DirectoryTreeViewer> {
               onPressed: () {
                 final name = controller.text.trim();
                 if (name.isNotEmpty) {
-                  try {
-                    if (isRename) {
-                      final newPath = path.join(entity.parent.path, name);
-                      entity.renameSync(newPath);
+                  if (isRename) {
+                    final newPath = path.join(entity.parent.path, name);
+                    entity.renameSync(newPath);
+                  } else {
+                    final newPath = path.join(entity.path, name);
+                    if (isFolder) {
+                      Directory(newPath).createSync();
                     } else {
-                      final newPath = path.join(entity.path, name);
-                      if (isFolder) {
-                        Directory(newPath).createSync();
-                      } else {
-                        File(newPath).createSync();
-                      }
-                    }
-                    if (mounted) {
-                      _refreshTree();
-                    }
-                  } catch (e) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Error: $e')),
-                      );
+                      File(newPath).createSync();
                     }
                   }
-                  if (mounted) {
-                    Navigator.of(context).pop();
-                  }
+                  setState(() {});
+                  Navigator.of(context).pop();
                 }
               },
             ),
@@ -177,10 +269,10 @@ class _DirectoryTreeViewerState extends State<DirectoryTreeViewer> {
     );
   }
 
-  void _showBottomSheet(FileSystemEntity entity) {
+  void _showBottomSheet(BuildContext context, FileSystemEntity entity) async {
     showModalBottomSheet(
       context: context,
-      builder: (BuildContext bottomSheetContext) {
+      builder: (BuildContext context) {
         final isDirectory = entity is Directory;
 
         bool showDeleteOption = false;
@@ -192,12 +284,12 @@ class _DirectoryTreeViewerState extends State<DirectoryTreeViewer> {
 
         return Wrap(
           children: <Widget>[
-            if (showDeleteOption)
+            if (showDeleteOption) // Conditionally show Delete ListTile
               ListTile(
                 leading: const Icon(Icons.delete),
                 title: const Text('Delete'),
                 onTap: () async {
-                  Navigator.pop(bottomSheetContext);
+                  Navigator.pop(context);
 
                   final confirmDelete = await showDialog<bool>(
                     context: context,
@@ -227,7 +319,7 @@ class _DirectoryTreeViewerState extends State<DirectoryTreeViewer> {
                     try {
                       entity.deleteSync(recursive: true);
                       if (mounted) {
-                        _refreshTree();
+                        setState(() {});
                       }
                     } catch (e) {
                       if (mounted) {
@@ -249,7 +341,7 @@ class _DirectoryTreeViewerState extends State<DirectoryTreeViewer> {
                   leading: const Icon(Icons.note_add),
                   title: const Text('New file'),
                   onTap: () {
-                    Navigator.pop(bottomSheetContext);
+                    Navigator.pop(context);
                     _showCreateRenameDialog(entity: entity, isFolder: false);
                   },
                 ),
@@ -258,7 +350,7 @@ class _DirectoryTreeViewerState extends State<DirectoryTreeViewer> {
                   leading: const Icon(Icons.create_new_folder),
                   title: const Text('New folder'),
                   onTap: () {
-                    Navigator.pop(bottomSheetContext);
+                    Navigator.pop(context);
                     _showCreateRenameDialog(entity: entity, isFolder: true);
                   },
                 ),
@@ -267,7 +359,7 @@ class _DirectoryTreeViewerState extends State<DirectoryTreeViewer> {
               leading: const Icon(Icons.edit),
               title: const Text('Rename'),
               onTap: () {
-                Navigator.pop(bottomSheetContext);
+                Navigator.pop(context);
                 _showCreateRenameDialog(entity: entity, isRename: true);
               },
             ),
@@ -275,7 +367,7 @@ class _DirectoryTreeViewerState extends State<DirectoryTreeViewer> {
               leading: const Icon(Icons.copy),
               title: const Text('Copy path'),
               onTap: () {
-                Navigator.pop(bottomSheetContext);
+                Navigator.pop(context);
                 Clipboard.setData(ClipboardData(text: entity.path));
               },
             ),
@@ -285,79 +377,134 @@ class _DirectoryTreeViewerState extends State<DirectoryTreeViewer> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return TreeView<FileSystemEntity>(
-      root: _rootNode,
-      builder: (context, node) {
-        final entity = node.value;
-        final isDirectory = entity is Directory;
+  Widget _buildDirectoryTree(
+    Directory directory,
+    DirectoryTreeStateNotifier stateNotifier,
+  ) {
+    final entries = directory.listSync();
+    entries.sort((a, b) {
+      if (a is Directory && b is File) return -1;
+      if (a is File && b is Directory) return 1;
+      return a.path.compareTo(b.path);
+    });
 
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
-          child: Row(
-            children: [
-              if (isDirectory)
-                _buildFolderArrow(node)
-              else
-                const SizedBox(width: 24),
-              
-              const SizedBox(width: 4),
-              
-              if (isDirectory)
-                _getFolderIcon(node)
-              else
-                getIconForFile(entity as File),
-                
-              const SizedBox(width: 8),
-              
-              Expanded(
-                child: Text(
-                  path.basename(entity.path),
-                  style: isDirectory 
-                      ? (widget.folderStyle?.folderNameStyle ?? const TextStyle(fontSize: 14))
-                      : (widget.fileStyle?.fileNameStyle ?? const TextStyle(fontSize: 14)),
-                  overflow: TextOverflow.ellipsis,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GestureDetector(
+          onSecondaryTapDown: (details) {
+            if (widget.onDirSecondaryTap != null) {
+              widget.onDirSecondaryTap!(directory, details);
+            }
+          },
+          onLongPress: () {
+            _showBottomSheet(context, directory);
+          },
+          onTap: () {
+            stateNotifier.toggleFolder(directory.path, widget.rootPath);
+            currentDir = directory.path;
+            if (directory.path == widget.rootPath) {
+              setState(() {
+                isParentOpen = !isParentOpen;
+              });
+            }
+          },
+          child: MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: Row(
+              children: [
+                directory.path != widget.rootPath
+                    ? (stateNotifier.isUnfolded(directory.path, widget.rootPath)
+                          ? widget.folderStyle?.folderOpenedicon ??
+                                const Icon(Icons.arrow_drop_down)
+                          : widget.folderStyle?.folderClosedicon ??
+                                const Icon(Icons.arrow_right))
+                    : isParentOpen
+                    ? widget.folderStyle?.rootFolderOpenedIcon ??
+                          const Icon(Icons.arrow_drop_down)
+                    : widget.folderStyle?.rootFolderClosedIcon ??
+                          const Icon(Icons.arrow_right),
+                const SizedBox(width: 8),
+                Text(
+                  path.basename(directory.path),
+                  style:
+                      widget.folderStyle?.folderNameStyle ??
+                      const TextStyle(fontSize: 16),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        );
-      },
-      onNodeTap: (node) {
-        final entity = node.value;
-        if (entity is File) {
-          if (widget.onFileTap != null) {
-            widget.onFileTap!(entity, TapDownDetails());
-          }
-        } else if (entity is Directory) {
-          if (widget.onDirTap != null) {
-            widget.onDirTap!(entity, TapDownDetails());
-          }
-        }
-      },
-      onNodeLongPress: (node) {
-        _showBottomSheet(node.value);
-      },
+        ),
+        if (stateNotifier.isUnfolded(directory.path, widget.rootPath))
+          Padding(
+            padding: const EdgeInsets.only(left: 16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ...entries.map((entry) {
+                  if (entry is Directory) {
+                    return _buildDirectoryTree(
+                      Directory(entry.path),
+                      stateNotifier,
+                    );
+                  } else if (entry is File) {
+                    return _buildFileItem(entry);
+                  }
+                  return const SizedBox.shrink();
+                }),
+              ],
+            ),
+          ),
+      ],
     );
   }
 
-  Widget _buildFolderArrow(TreeNode<FileSystemEntity> node) {
-    if (node.isRoot) {
-      return node.isExpanded 
-          ? (widget.folderStyle?.rootFolderOpenedIcon ?? const Icon(Icons.arrow_drop_down, size: 20))
-          : (widget.folderStyle?.rootFolderClosedIcon ?? const Icon(Icons.arrow_right, size: 20));
-    }
-    return node.isExpanded 
-        ? (widget.folderStyle?.folderOpenedicon ?? const Icon(Icons.arrow_drop_down, size: 20))
-        : (widget.folderStyle?.folderClosedicon ?? const Icon(Icons.arrow_right, size: 20));
+  Widget _buildFileItem(File file) {
+    return GestureDetector(
+      onTap: () {
+        final details = TapDownDetails();
+        if (widget.onFileTap != null) {
+          widget.onFileTap!(file, details);
+        }
+      },
+      onSecondaryTapDown: (details) {
+        if (widget.onFileSecondaryTap != null) {
+          widget.onFileSecondaryTap!(file, details);
+        }
+      },
+      onLongPress: () {
+        _showBottomSheet(context, file);
+      },
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: Row(
+          children: [
+            getIconForFile(file),
+            const SizedBox(width: 8),
+            Text(
+              path.basename(file.path),
+              style:
+                  widget.fileStyle?.fileNameStyle ??
+                  const TextStyle(fontSize: 16),
+            ),
+          ],
+        ),
+      ),
+    );
   }
-  
-  Widget _getFolderIcon(TreeNode<FileSystemEntity> node) {
-    return Icon(
-      node.isExpanded ? Icons.folder_open : Icons.folder,
-      color: Colors.amber,
-      size: 20,
+
+  @override
+  Widget build(BuildContext context) {
+    final stateNotifier = DirectoryTreeStateProvider.of(context);
+    stateNotifier.watchDirectory(widget.rootPath);
+    final rootDirectory = Directory(widget.rootPath);
+
+    if (!rootDirectory.existsSync()) {
+      return const Center(child: Text('Directory does not exist'));
+    }
+
+    return SingleChildScrollView(
+      child: _buildDirectoryTree(rootDirectory, stateNotifier),
     );
   }
 }
