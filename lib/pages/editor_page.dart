@@ -1,5 +1,5 @@
 import 'dart:io';
-
+import 'package:re_highlight/styles/vs2015.dart';
 import 'package:flutter_studio/code_forge.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_studio/librarys/dynamic_tab_bar.dart';
@@ -673,6 +673,7 @@ class _EditorPageState extends State<EditorPage> {
             controller: fileData.controller,
             undoController: fileData.undoController,
             filePath: fileData.filePath,
+            editorTheme: vs2015Theme,
             enableKeyboardSuggestions: false,
             deleteFoldRangeOnDeletingFirstLine: true,
             textStyle: const TextStyle(fontSize: 12),
