@@ -791,18 +791,34 @@ class _EditorPageState extends State<EditorPage> {
           pageType: _currentPage,
         ),
         drawer: Drawer(
-          child: SafeArea(
-            child: DirectoryTreeViewer(
-              rootPath: widget.projectRootDir,
-              enableCreateFolderOption: true,
-              isUnfoldedFirst: !_isDrawerCollapsed,
-              onFileTap: (file, details) {
-                _openFile(file);
-                Navigator.pop(context);
-              },
-            ),
+  child: SafeArea(
+    child: Column(
+      children: [
+        const Padding(
+          padding: EdgeInsets.all(12.0),
+          child: Text(
+            "Project Explorer",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
         ),
+        const Divider(),
+
+
+        Expanded(
+          child: DirectoryTreeViewer(
+            rootPath: widget.projectRootDir,
+            enableCreateFolderOption: true,
+            isUnfoldedFirst: !_isDrawerCollapsed,
+            onFileTap: (file, details) {
+              _openFile(file);
+              Navigator.pop(context);
+            },
+          ),
+        ),
+      ],
+    ),
+  ),
+),
         body: IndexedStack(
           index: _pageIndex,
           children: [
