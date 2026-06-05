@@ -1,0 +1,63 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_studio/core/appbar_actions/appbar_action_item.dart';
+import 'package:flutter_studio/core/editor_context.dart';
+
+class FormatFile extends AppbarActionItem {
+  static const String outputTerminalId = 'editor.terminal.output_window';
+
+  @override
+  bool canExecute(EditorContext context) {
+    final path = context.currentFilePath;
+    return path?.endsWith('.ts') == true || path?.endsWith('.tsx') == true;
+  }
+
+  @override
+  Widget? buildActionView(EditorContext context) => null;
+
+  @override
+  Future<void> execute(EditorContext context) async {
+    final sessionManager = context.language?.sessionManager;
+
+    if (sessionManager == null) {
+      context.showMessage(message: "Terminal not initialized");
+      return;
+    }
+
+    final filePath = context.currentFilePath;
+
+    if (filePath == null) {
+      context.showMessage(message: "No file selected");
+      return;
+    }
+
+    context.bottomRegistry?.selectItemById(outputTerminalId);
+
+    final command = 'prettier --write "$filePath"';
+
+    await sessionManager.executeInSession(outputTerminalId, command);
+  }
+
+  @override
+  Widget? get icon => Image.asset("assets/action_icons/format.png");
+
+  @override
+  String get id => "editor.ts.appbar.format_file";
+
+  @override
+  String get label => "Format";
+
+  @override
+  int get order => 1;
+
+  @override
+  bool get requiresUIThread => false;
+
+  @override
+  String? get subtitle => "Format TypeScript using Prettier";
+
+  @override
+  bool get visible => true;
+
+  @override
+  Future<void> dispose() async {}
+}

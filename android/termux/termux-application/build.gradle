@@ -1,0 +1,89 @@
+plugins {
+    id "com.android.library"
+}
+ext {
+    // The packageVariant defines the bootstrap variant that will be included in the app APK.
+    // This must be supported by com.termux.shared.termux.TermuxBootstrap.PackageVariant or app will
+    // crash at startup.
+    // Bootstrap of a different variant must not be manually installed by the user after app installation
+    // by replacing $PREFIX since app code is dependant on the variant used to build the APK.
+    // Currently supported values are: [ "apt-android-7" "apt-android-5" ]
+    packageVariant = System.getenv("TERMUX_PACKAGE_VARIANT") ?: "apt-android-7" // Default: "apt-android-7"
+}
+
+android {
+    namespace "com.vault.fide"
+
+    compileSdkVersion 36
+    ndkVersion "29.0.14206865"
+
+    defaultConfig {
+        minSdkVersion 26
+        targetSdkVersion 28
+        
+        manifestPlaceholders.TERMUX_PACKAGE_NAME = "com.vault.fide"
+        buildConfigField "String", "TERMUX_PACKAGE_VARIANT", "\"" + project.ext.packageVariant + "\"" // Used by TermuxApplication class
+        
+        externalNativeBuild {
+            ndkBuild {
+                cFlags "-std=c11", "-Wall", "-Wextra", "-Werror", "-Os", "-fno-stack-protector", "-Wl,--gc-sections"
+            }
+        }
+        ndk {
+            abiFilters "arm64-v8a"
+        }
+        
+        
+    }
+    compileOptions {
+            coreLibraryDesugaringEnabled true
+            sourceCompatibility JavaVersion.VERSION_17
+            targetCompatibility JavaVersion.VERSION_17
+        }
+
+    // Correct placement for ndkBuild path
+    externalNativeBuild {
+        ndkBuild {
+            path project.file("src/main/cpp/Android.mk")
+        }
+    }
+
+    lint {
+        disable 'ProtectedPermissions'
+    }
+
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+        }
+    }
+
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging true
+        }
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+}
+dependencies {
+    testImplementation "junit:junit:4.13.2"
+    testImplementation "org.robolectric:robolectric:4.10"
+    coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:1.1.5"
+    implementation project(":termux:terminal-view")
+    implementation project(":termux:termux-shared")
+    implementation "androidx.appcompat:appcompat:1.7.1"
+    implementation "androidx.preference:preference:1.2.1"
+    implementation "androidx.drawerlayout:drawerlayout:1.2.0"
+    implementation "androidx.viewpager:viewpager:1.0.0"
+    implementation "com.google.guava:guava:24.1-jre"
+    implementation "io.noties.markwon:core:4.6.2"
+    implementation "io.noties.markwon:ext-strikethrough:4.6.2"
+    implementation "io.noties.markwon:linkify:4.6.2"
+    implementation "io.noties.markwon:recycler:4.6.2"
+    implementation 'com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava'
+    
+}
+
