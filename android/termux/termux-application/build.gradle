@@ -15,7 +15,6 @@ android {
     namespace "com.vault.fide"
 
     compileSdkVersion 36
-    ndkVersion "29.0.14206865"
 
     defaultConfig {
         minSdkVersion 26
@@ -23,30 +22,12 @@ android {
         
         manifestPlaceholders.TERMUX_PACKAGE_NAME = "com.vault.fide"
         buildConfigField "String", "TERMUX_PACKAGE_VARIANT", "\"" + project.ext.packageVariant + "\"" // Used by TermuxApplication class
-        
-        externalNativeBuild {
-            ndkBuild {
-                cFlags "-std=c11", "-Wall", "-Wextra", "-Werror", "-Os", "-fno-stack-protector", "-Wl,--gc-sections"
-            }
-        }
-        ndk {
-            abiFilters "arm64-v8a"
-        }
-        
-        
     }
     compileOptions {
             coreLibraryDesugaringEnabled true
             sourceCompatibility JavaVersion.VERSION_17
             targetCompatibility JavaVersion.VERSION_17
         }
-
-    // Correct placement for ndkBuild path
-    externalNativeBuild {
-        ndkBuild {
-            path project.file("src/main/cpp/Android.mk")
-        }
-    }
 
     lint {
         disable 'ProtectedPermissions'
@@ -55,12 +36,6 @@ android {
     testOptions {
         unitTests {
             includeAndroidResources = true
-        }
-    }
-
-    packagingOptions {
-        jniLibs {
-            useLegacyPackaging true
         }
     }
 
