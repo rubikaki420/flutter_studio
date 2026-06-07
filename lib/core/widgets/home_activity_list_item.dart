@@ -209,11 +209,12 @@ class _HomeActivityListItemState extends State<HomeActivityListItem>
                 Expanded(
                   child: InkWell(
                     onTap: () async {
+                      final buildContext = context;
                       String? directory = await _openDirectory();
                       if (directory == null) return;
-                      if (!mounted) return;
+                      if (!buildContext.mounted) return;
                       final createdPath = await language.createProject(
-                        context: context,
+                        context: buildContext,
                         directory: directory,
                       );
                       if (createdPath == null) return;
