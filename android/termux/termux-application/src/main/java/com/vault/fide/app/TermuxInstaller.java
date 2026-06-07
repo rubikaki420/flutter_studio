@@ -10,6 +10,8 @@ import android.system.Os;
 import android.util.Pair;
 import android.view.WindowManager;
 
+import androidx.annotation.Nullable;
+
 import com.vault.fide.R;
 import com.vault.fide.shared.file.FileUtils;
 import com.vault.fide.shared.termux.crash.TermuxCrashUtils;
@@ -28,6 +30,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.ZipEntry;
@@ -197,7 +200,7 @@ final class TermuxInstaller {
                                     if (zipEntryName.startsWith("bin/") || zipEntryName.startsWith("libexec") ||
                                         zipEntryName.startsWith("lib/apt/apt-helper") || zipEntryName.startsWith("lib/apt/methods")) {
                                         //noinspection OctalInteger
-                                        Os.chmod(targetFile.getAbsolutePath(), 0700);
+                                        Os.chmod(targetFile.getAbsolutePath(), 0500);
                                     }
                                 }
                             }
@@ -219,6 +222,8 @@ final class TermuxInstaller {
                     if (!TERMUX_STAGING_PREFIX_DIR.renameTo(TERMUX_PREFIX_DIR)) {
                         throw new RuntimeException("Moving termux prefix staging to prefix directory failed");
                     }
+
+                    restoreconRecursive(TERMUX_PREFIX_DIR_PATH);
 
                     Logger.logInfo(LOG_TAG, "Bootstrap packages installed successfully.");
 
@@ -377,6 +382,21 @@ final class TermuxInstaller {
 
     private static Error ensureDirectoryExists(File directory) {
         return FileUtils.createDirectoryFile(directory.getAbsolutePath());
+    }
+
+    private static void restoreconRecursive(@Nullable String path) {
+        if (path == null) return;
+        try {
+            Class<?> selinuxClass = Class.forName("android.os.SELinux");
+            Method method = selinuxClass.getDeclaredMethod("restorecon", String.class, boolean.class);
+            method.setAccessible(true);
+            method.invoke(null, path, true);
+            Logger.logInfo(LOG_TAG, "restoreconRecursive completed for \"" + path + "\"");
+        } catch (ClassNotFoundException e) {
+            Logger.logWarn(LOG_TAG, "android.os.SELinux not found, skipping restorecon");
+        } catch (Exception e) {
+            Logger.logWarn(LOG_TAG, "restoreconRecursive failed: " + e.getMessage());
+        }
     }
 
 }
