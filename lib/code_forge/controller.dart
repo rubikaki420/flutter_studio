@@ -423,6 +423,9 @@ class CodeForgeController implements DeltaTextInputClient {
   /// The text input connection to the platform.
   TextInputConnection? connection;
 
+  @override
+  bool onFocusReceived() => false;
+
   /// The range of text that has been modified and needs reprocessing.
   TextRange? dirtyRegion;
 

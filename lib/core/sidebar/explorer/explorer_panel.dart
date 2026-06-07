@@ -130,11 +130,12 @@ class _ExplorerViewState extends State<_ExplorerView> {
       root.addChild(_makeNode(e));
     }
 
-    if (mounted)
+    if (mounted) {
       setState(() {
         _root = root;
         _loading = false;
       });
+    }
   }
 
   TreeNode<FileSystemEntity> _makeNode(FileSystemEntity e) {

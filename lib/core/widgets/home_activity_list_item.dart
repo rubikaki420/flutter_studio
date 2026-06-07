@@ -211,7 +211,7 @@ class _HomeActivityListItemState extends State<HomeActivityListItem>
                     onTap: () async {
                       String? directory = await _openDirectory();
                       if (directory == null) return;
-                      //ignore: use_build_context_synchronously
+                      if (!mounted) return;
                       final createdPath = await language.createProject(
                         context: context,
                         directory: directory,
