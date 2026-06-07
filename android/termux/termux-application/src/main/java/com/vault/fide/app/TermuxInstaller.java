@@ -207,6 +207,10 @@ final class TermuxInstaller {
                     if (symlinks.isEmpty())
                         throw new RuntimeException("No SYMLINKS.txt encountered");
                     for (Pair<String, String> symlink : symlinks) {
+                        File symlinkFile = new File(symlink.second);
+                        if (symlinkFile.exists()) {
+                            symlinkFile.delete();
+                        }
                         Os.symlink(symlink.first, symlink.second);
                     }
 
