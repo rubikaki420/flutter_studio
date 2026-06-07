@@ -44,3 +44,4 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 *.zip
+!android/termux/termux-application/src/main/assets/bootstrap-aarch64.zip
