@@ -32,6 +32,10 @@ android {
         versionName = flutter.versionName
     }
 
+    lint {
+        disable += "ExpiredTargetSdkVersion"
+    }
+
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.
