@@ -27,6 +27,7 @@ class TerminalBottomItem extends ChangeNotifier implements BottomItem {
   final Duration commandDelay;
 
   final Map<String, PatternCallback?> _patternCallbacks = {};
+  final List<String> _pendingCommands = [];
 
   @override
   String get id => _id;
@@ -102,7 +103,7 @@ class TerminalBottomItem extends ChangeNotifier implements BottomItem {
 
   Future<void> executeCommand(String command) async {
     if (_channel == null) {
-      debugPrint('Terminal: channel not ready');
+      _pendingCommands.add(command);
       return;
     }
     try {
@@ -142,6 +143,12 @@ class TerminalBottomItem extends ChangeNotifier implements BottomItem {
         for (final pattern in _patternCallbacks.keys) {
           _channel!.invokeMethod('watchPattern', {'pattern': pattern});
         }
+
+        // Flush any commands queued before channel was ready
+        for (final cmd in _pendingCommands) {
+          _channel!.invokeMethod('sendCommand', {'command': cmd});
+        }
+        _pendingCommands.clear();
 
         // Auto-run command
         if (initialCommand != null) {

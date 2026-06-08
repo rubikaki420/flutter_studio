@@ -8,7 +8,6 @@ import 'package:flutter_studio/core/utils/app_colors.dart';
 class WebPreview implements BottomItem {
   InAppWebViewController? _controller;
   FlutterLanguageState? _state;
-
   bool _hasTriedLoad = false;
 
   @override
@@ -35,30 +34,23 @@ class WebPreview implements BottomItem {
   @override
   Future<void> prepare(EditorContext context) async {
     final lang = context.language;
-
     if (lang is FlutterLanguage) {
       _state = lang.state;
-
-      _state?.addListener(() {
-        _tryLoad();
-      });
+      _state?.addListener(_tryLoad);
     }
   }
 
   void _tryLoad() {
-    if (_state?.isAppLaunched == true && _controller != null) {
-      _hasTriedLoad = true;
-
-      _controller!.loadUrl(
-        urlRequest: URLRequest(url: WebUri("http://localhost:8080")),
-      );
-    }
+    if (_controller == null) return;
+    _hasTriedLoad = true;
+    _controller!.loadUrl(
+      urlRequest: URLRequest(url: WebUri("http://localhost:8080")),
+    );
   }
 
   @override
   Widget build(BuildContext context, EditorContext editorContext) {
     final lang = editorContext.language;
-
     final isLaunched =
         lang is FlutterLanguage && (lang.state?.isAppLaunched ?? false);
 
