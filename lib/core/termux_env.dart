@@ -42,7 +42,7 @@ class TermuxEnv {
   }) {
     return Process.start(
       '$prefix/bin/sh',
-      ['-c', 'exec "$@"', 'sh', executable, ...arguments],
+      ['-c', r'exec "$@"', 'sh', executable, ...arguments],
       environment: environment,
       workingDirectory: workingDirectory,
     );
@@ -55,7 +55,7 @@ class TermuxEnv {
   }) {
     return Process.run(
       '$prefix/bin/sh',
-      ['-c', 'exec "$@"', 'sh', executable, ...arguments],
+      ['-c', r'exec "$@"', 'sh', executable, ...arguments],
       environment: environment,
       workingDirectory: workingDirectory,
     );
