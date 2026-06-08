@@ -1,238 +1,78 @@
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import '../language/language.dart';
-import '../activities/editor_activity/editor_page.dart';
-import "install_dialog.dart";
 import 'package:flutter_studio/core/utils/app_colors.dart';
 
-class HomeActivityListItem extends StatefulWidget {
-  final Language language;
+class HomeActionCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
 
-  const HomeActivityListItem({super.key, required this.language});
-
-  @override
-  State<HomeActivityListItem> createState() => _HomeActivityListItemState();
-}
-
-class _HomeActivityListItemState extends State<HomeActivityListItem>
-    with SingleTickerProviderStateMixin {
-  late AnimationController controller;
-  late Animation<double> animation;
-  bool isCollapsed = true;
-  bool? installed;
-  bool checkingInstall = true;
-
-  @override
-  void initState() {
-    super.initState();
-    controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 250),
-    );
-    animation = CurvedAnimation(parent: controller, curve: Curves.easeInOut);
-    loadInstallState();
-  }
-
-  @override
-  void dispose() {
-    controller.dispose();
-    super.dispose();
-  }
-
-  void toggle() {
-    isCollapsed = !isCollapsed;
-    isCollapsed ? controller.reverse() : controller.forward();
-    setState(() {});
-  }
-
-  Future<String?> _openDirectory() async {
-    String? directory = await FilePicker.getDirectoryPath();
-    return directory;
-  }
-
-  void _navigateToEditor(String directory) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => EditorPage(
-          language: widget.language,
-          workspaceDirectory: directory,
-        ),
-      ),
-    );
-  }
-
-  Future<void> loadInstallState() async {
-    final installer = widget.language.installer;
-
-    if (installer == null) {
-      setState(() {
-        installed = true;
-        checkingInstall = false;
-      });
-      return;
-    }
-
-    final result = await installer.isInstalled();
-
-    if (!mounted) return;
-
-    setState(() {
-      installed = result;
-      checkingInstall = false;
-    });
-  }
-
-  Future<void> showInstallDialog() async {
-    final installer = widget.language.installer;
-
-    if (installer == null) {
-      return;
-    }
-
-    await showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) {
-        return InstallDialog(
-          installer: installer,
-          onInstalled: () {
-            if (!mounted) return;
-
-            setState(() {
-              installed = true;
-            });
-          },
-        );
-      },
-    );
-  }
-
-  Widget buildInstallBadge() {
-    if (checkingInstall) {
-      return const SizedBox(
-        width: 20,
-        height: 20,
-        child: CircularProgressIndicator(strokeWidth: 2),
-      );
-    }
-
-    final isInstalled = installed ?? false;
-
-    return InkWell(
-      onTap: isInstalled ? null : showInstallDialog,
-      borderRadius: BorderRadius.circular(30),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        decoration: BoxDecoration(
-          color: isInstalled ? AppColors.blueGrey : AppColors.orange,
-          borderRadius: BorderRadius.circular(30),
-        ),
-        child: Text(
-          isInstalled ? 'Installed' : 'Not Installed',
-          style: const TextStyle(
-            color: AppColors.white,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
-    );
-  }
+  const HomeActionCard({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    var language = widget.language;
     return Container(
       decoration: BoxDecoration(
         color: AppColors.vscodeBackground,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Column(
-        children: [
-          InkWell(
-            onTap: toggle,
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Row(
-                children: [
-                  language.icon,
-
-                  const SizedBox(width: 12),
-
-                  Text(
-                    language.displayName,
-                    style: const TextStyle(
-                      color: AppColors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-
-                  const SizedBox(width: 12),
-
-                  AnimatedRotation(
-                    turns: isCollapsed ? 0 : 0.5,
-                    duration: const Duration(milliseconds: 250),
-                    child: const Icon(
-                      Icons.keyboard_arrow_down,
-                      color: AppColors.white,
-                    ),
-                  ),
-
-                  const Spacer(),
-
-                  buildInstallBadge(),
-                ],
-              ),
-            ),
-          ),
-          SizeTransition(
-            sizeFactor: animation,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
             child: Row(
               children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: AppColors.blue.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, color: AppColors.blue, size: 22),
+                ),
+                const SizedBox(width: 14),
                 Expanded(
-                  child: InkWell(
-                    onTap: () async {
-                      String? directory = await _openDirectory();
-                      if (directory != null) {
-                        _navigateToEditor(directory);
-                      }
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      alignment: Alignment.center,
-                      child: const Text(
-                        "Open Existing project",
-                        style: TextStyle(color: AppColors.white),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          color: AppColors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 3),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          color: AppColors.white.withValues(alpha: 0.5),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                Expanded(
-                  child: InkWell(
-                    onTap: () async {
-                      final buildContext = context;
-                      String? directory = await _openDirectory();
-                      if (directory == null) return;
-                      if (!buildContext.mounted) return;
-                      final createdPath = await language.createProject(
-                        context: buildContext,
-                        directory: directory,
-                      );
-                      if (createdPath == null) return;
-
-                      _navigateToEditor(createdPath);
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      color: AppColors.blue,
-                      alignment: Alignment.center,
-                      child: Text("Create new ${language.displayName} project"),
-                    ),
-                  ),
+                const Icon(
+                  Icons.chevron_right,
+                  color: AppColors.white,
+                  size: 20,
                 ),
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
