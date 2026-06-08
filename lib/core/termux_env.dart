@@ -29,20 +29,20 @@ class TermuxEnv {
         'COLORTERM': 'truecolor',
       };
 
-  /// Runs [executable] with [arguments] using Termux's own shell.
+  /// Runs [executable] with [arguments] using Termux's bash.
   ///
-  /// On Android, Dart's `Process.start` with `runInShell: true` uses
-  /// `/system/bin/sh` which may fail to execute Termux shell scripts
-  /// (shebangs under `$PREFIX/bin/sh`). By using the Termux shell
-  /// directly we avoid SELinux and sh-implementation issues.
+  /// Using bash directly (not `exec` + kernel shebang resolution) avoids
+  /// ENOENT when the script's `#!` interpreter path doesn't match the
+  /// Termux fork mount point. Bash reads the script as a shell script
+  /// and executes it correctly regardless of shebang mismatches.
   static Future<Process> start(
     String executable,
     List<String> arguments, {
     String? workingDirectory,
   }) {
     return Process.start(
-      '$prefix/bin/sh',
-      ['-c', r'exec "$@"', 'sh', executable, ...arguments],
+      '$prefix/bin/bash',
+      [executable, ...arguments],
       environment: environment,
       workingDirectory: workingDirectory,
     );
@@ -54,8 +54,8 @@ class TermuxEnv {
     String? workingDirectory,
   }) {
     return Process.run(
-      '$prefix/bin/sh',
-      ['-c', r'exec "$@"', 'sh', executable, ...arguments],
+      '$prefix/bin/bash',
+      [executable, ...arguments],
       environment: environment,
       workingDirectory: workingDirectory,
     );
