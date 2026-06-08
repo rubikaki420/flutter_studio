@@ -119,6 +119,7 @@ class LspStdioConfig extends LspConfig {
       args ?? [],
       environment: environment,
       workingDirectory: workspacePath,
+      runInShell: true,
     );
     _process.stdout.listen(_handleStdoutData);
     _process.stderr.listen((data) => debugPrint(utf8.decode(data)));
