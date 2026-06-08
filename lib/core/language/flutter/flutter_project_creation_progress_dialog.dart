@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_studio/core/utils/app_colors.dart';
+import 'package:flutter_studio/core/termux_env.dart';
 
 class FlutterProjectCreationProgressDialog extends StatefulWidget {
   final List<String> args;
@@ -38,7 +39,7 @@ class _FlutterProjectCreationProgressDialogState
 
   Future<void> _runProcess() async {
     try {
-      final process = await Process.start('flutter', widget.args);
+      final process = await TermuxEnv.start('flutter', widget.args);
 
       process.stdout
           .transform(const SystemEncoding().decoder)

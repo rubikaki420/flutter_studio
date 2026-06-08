@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_studio/core/language/language.dart';
+import 'package:flutter_studio/core/termux_env.dart';
 
 class CPPLanguageInstaller implements LanguageInstaller {
   @override
@@ -14,7 +15,7 @@ class CPPLanguageInstaller implements LanguageInstaller {
 
   @override
   Stream<String> install() async* {
-    final process = await Process.start('${PreInstallChecker.basePath}/apt', [
+    final process = await TermuxEnv.start('${PreInstallChecker.basePath}/apt', [
       'install',
       'clang',
       'libstdc++-dev',
@@ -34,7 +35,7 @@ class CPPLanguageInstaller implements LanguageInstaller {
 
   @override
   Stream<String> uninstall() async* {
-    final process = await Process.start('${PreInstallChecker.basePath}/apt', [
+    final process = await TermuxEnv.start('${PreInstallChecker.basePath}/apt', [
       'remove',
       'clang',
       'libstdc++-dev',
@@ -55,7 +56,7 @@ class CPPLanguageInstaller implements LanguageInstaller {
   @override
   Future<String?> getVersion() async {
     try {
-      final result = await Process.run('clang++', ['--version']);
+      final result = await TermuxEnv.run('clang++', ['--version']);
       if (result.exitCode != 0) return null;
       return result.stdout.toString().trim();
     } catch (_) {

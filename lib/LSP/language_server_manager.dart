@@ -1,5 +1,6 @@
 import 'package:flutter_studio/LSP/lsp.dart';
 import 'package:flutter_studio/core/language/language.dart';
+import 'package:flutter_studio/core/termux_env.dart';
 
 class LanguageServerManager {
   LanguageServerManager._();
@@ -20,6 +21,7 @@ class LanguageServerManager {
         args: language.args,
         workspacePath: workspacePath,
         languageId: language.languageId,
+        environment: TermuxEnv.environment,
       );
       _instances[workspacePath] = config;
       return config;

@@ -12,6 +12,7 @@ import '../bottom_bar/bottom_item.dart';
 import '../sidebar/sidebar_contribution.dart';
 import 'package:flutter_studio/core/terminal/session_manager.dart';
 import 'dart:io';
+import 'package:flutter_studio/core/termux_env.dart';
 
 abstract class Language {
   TerminalSessionManager? get sessionManager => null;
@@ -80,14 +81,14 @@ abstract class LanguageInstaller {
 }
 
 class PreInstallChecker {
-  static const String basePath = '/data/data/com.vault.fide/files/usr/bin';
+  static const String basePath = TermuxEnv.basePath;
 
   static Future<void> ensureWhichIsInstalled() async {
     final whichFile = File('$basePath/which');
     if (whichFile.existsSync()) return;
 
     try {
-      final process = await Process.start('$basePath/apt', [
+      final process = await TermuxEnv.start('$basePath/apt', [
         'install',
         'which',
         '-y',
@@ -103,7 +104,7 @@ class PreInstallChecker {
   }) async {
     await ensureWhichIsInstalled();
     try {
-      final result = await Process.run('$basePath/which', [command]);
+      final result = await TermuxEnv.run('$basePath/which', [command]);
       return result.exitCode == 0;
     } catch (_) {
       if (customFallbackPath != null && File(customFallbackPath).existsSync()) {

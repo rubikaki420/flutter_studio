@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_studio/core/language/language.dart';
+import 'package:flutter_studio/core/termux_env.dart';
 
 class HtmlLanguageInstaller implements LanguageInstaller {
   @override
@@ -24,7 +25,7 @@ class HtmlLanguageInstaller implements LanguageInstaller {
   Stream<String> _installNpm() async* {
     yield 'npm not found. Installing nodejs...\n';
 
-    final process = await Process.start('${PreInstallChecker.basePath}/apt', [
+    final process = await TermuxEnv.start('${PreInstallChecker.basePath}/apt', [
       'install',
       'nodejs',
       '-y',
@@ -45,7 +46,7 @@ class HtmlLanguageInstaller implements LanguageInstaller {
   Stream<String> _installHtmlLsp() async* {
     yield 'Installing HTML language server...\n';
 
-    final process = await Process.start('npm', [
+    final process = await TermuxEnv.start('npm', [
       'install',
       '-g',
       'vscode-langservers-extracted',
@@ -66,7 +67,7 @@ class HtmlLanguageInstaller implements LanguageInstaller {
   Stream<String> _installPrettier() async* {
     yield 'Installing Prettier...\n';
 
-    final process = await Process.start('npm', [
+    final process = await TermuxEnv.start('npm', [
       'install',
       '-g',
       'prettier',
@@ -123,7 +124,7 @@ class HtmlLanguageInstaller implements LanguageInstaller {
   Stream<String> uninstall() async* {
     yield 'Removing HTML tools...\n';
 
-    final process = await Process.start('npm', [
+    final process = await TermuxEnv.start('npm', [
       'uninstall',
       '-g',
       'vscode-html-language-server',
@@ -143,10 +144,10 @@ class HtmlLanguageInstaller implements LanguageInstaller {
   @override
   Future<String?> getVersion() async {
     try {
-      final lsp = await Process.run('vscode-html-language-server', [
+      final lsp = await TermuxEnv.run('vscode-html-language-server', [
         '--version',
       ]);
-      final prettier = await Process.run('prettier', ['--version']);
+      final prettier = await TermuxEnv.run('prettier', ['--version']);
 
       return '''
 HTML LSP: ${lsp.stdout.toString().trim()}
@@ -154,11 +155,11 @@ Prettier: ${prettier.stdout.toString().trim()}
 ''';
     } catch (_) {
       try {
-        final lsp = await Process.run(
+        final lsp = await TermuxEnv.run(
           '${PreInstallChecker.basePath}/vscode-langservers-extracted',
           ['--version'],
         );
-        final prettier = await Process.run(
+        final prettier = await TermuxEnv.run(
           '${PreInstallChecker.basePath}/prettier',
           ['--version'],
         );

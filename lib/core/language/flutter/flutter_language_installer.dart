@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_studio/core/language/language.dart';
+import 'package:flutter_studio/core/termux_env.dart';
 
 class FlutterLanguageInstaller implements LanguageInstaller {
   @override
@@ -15,7 +16,7 @@ class FlutterLanguageInstaller implements LanguageInstaller {
   @override
   Stream<String> install() async* {
     // 1. Install Flutter SDK
-    final flutterProcess = await Process.start(
+    final flutterProcess = await TermuxEnv.start(
       '${PreInstallChecker.basePath}/apt',
       ['install', 'flutter', '-y'],
     );
@@ -32,7 +33,7 @@ class FlutterLanguageInstaller implements LanguageInstaller {
     yield '\n✓ Flutter SDK installed\n';
 
     // 2. Install Android SDK
-    final androidProcess = await Process.start(
+    final androidProcess = await TermuxEnv.start(
       '${PreInstallChecker.basePath}/apt',
       ['install', 'android-sdk', '-y'],
     );
@@ -49,7 +50,7 @@ class FlutterLanguageInstaller implements LanguageInstaller {
     yield '\n✓ Android SDK installed\n';
 
     // 3. Flutter doctor
-    final doctor = await Process.start('flutter', ['doctor']);
+    final doctor = await TermuxEnv.start('flutter', ['doctor']);
 
     yield '\nRunning flutter doctor...\n';
 
@@ -63,7 +64,7 @@ class FlutterLanguageInstaller implements LanguageInstaller {
 
   @override
   Stream<String> uninstall() async* {
-    final process = await Process.start('${PreInstallChecker.basePath}/apt', [
+    final process = await TermuxEnv.start('${PreInstallChecker.basePath}/apt', [
       'remove',
       'flutter',
       '-y',
@@ -80,7 +81,7 @@ class FlutterLanguageInstaller implements LanguageInstaller {
   @override
   Future<String?> getVersion() async {
     try {
-      final result = await Process.run('flutter', ['--version']);
+      final result = await TermuxEnv.run('flutter', ['--version']);
 
       if (result.exitCode != 0) {
         return null;

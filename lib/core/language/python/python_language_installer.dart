@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_studio/core/language/language.dart';
+import 'package:flutter_studio/core/termux_env.dart';
 
 class PythonLanguageInstaller implements LanguageInstaller {
   @override
@@ -18,7 +19,7 @@ class PythonLanguageInstaller implements LanguageInstaller {
 
   @override
   Stream<String> install() async* {
-    final process = await Process.start('${PreInstallChecker.basePath}/apt', [
+    final process = await TermuxEnv.start('${PreInstallChecker.basePath}/apt', [
       'install',
       'python',
       '-y',
@@ -36,7 +37,7 @@ class PythonLanguageInstaller implements LanguageInstaller {
     yield '\n✓ Python installed successfully\n';
 
     // Install Python LSP
-    final lspProcess = await Process.start('pip', [
+    final lspProcess = await TermuxEnv.start('pip', [
       'install',
       'python-lsp-server',
     ]);
@@ -51,7 +52,7 @@ class PythonLanguageInstaller implements LanguageInstaller {
 
   @override
   Stream<String> uninstall() async* {
-    final process = await Process.start('${PreInstallChecker.basePath}/apt', [
+    final process = await TermuxEnv.start('${PreInstallChecker.basePath}/apt', [
       'remove',
       'python',
       '-y',
@@ -72,7 +73,7 @@ class PythonLanguageInstaller implements LanguageInstaller {
   @override
   Future<String?> getVersion() async {
     try {
-      final result = await Process.run('python', ['--version']);
+      final result = await TermuxEnv.run('python', ['--version']);
 
       if (result.exitCode != 0) {
         return null;

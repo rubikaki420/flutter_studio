@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_studio/core/language/language.dart';
+import 'package:flutter_studio/core/termux_env.dart';
 
 class TsLanguageInstaller implements LanguageInstaller {
   @override
@@ -14,7 +15,7 @@ class TsLanguageInstaller implements LanguageInstaller {
 
   @override
   Stream<String> install() async* {
-    final aptProcess = await Process.start(
+    final aptProcess = await TermuxEnv.start(
       '${PreInstallChecker.basePath}/apt',
       ['install', 'nodejs', '-y'],
     );
@@ -30,7 +31,7 @@ class TsLanguageInstaller implements LanguageInstaller {
 
     yield '\n✓ Node.js installed\n';
 
-    final npmProcess = await Process.start('npm', [
+    final npmProcess = await TermuxEnv.start('npm', [
       'install',
       '-g',
       'typescript',
@@ -57,7 +58,7 @@ class TsLanguageInstaller implements LanguageInstaller {
 
   @override
   Stream<String> uninstall() async* {
-    final process = await Process.start('${PreInstallChecker.basePath}/apt', [
+    final process = await TermuxEnv.start('${PreInstallChecker.basePath}/apt', [
       'remove',
       'nodejs',
       '-y',
@@ -74,7 +75,7 @@ class TsLanguageInstaller implements LanguageInstaller {
   @override
   Future<String?> getVersion() async {
     try {
-      final result = await Process.run('node', ['--version']);
+      final result = await TermuxEnv.run('node', ['--version']);
 
       if (result.exitCode != 0) {
         return null;
