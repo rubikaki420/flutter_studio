@@ -1,10 +1,12 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_studio/core/language/language_registry.dart';
 import 'package:flutter_studio/core/language/flutter/flutter_create_project_dialog.dart';
-import 'package:flutter_studio/core/language/flutter/flutter_project_creation_progress_dialog.dart';
 import 'package:flutter_studio/core/activities/editor_activity/editor_page.dart';
 import 'package:flutter_studio/core/service/native_bridge.dart';
+import 'package:flutter_studio/core/termux_env.dart';
 import 'package:flutter_studio/core/utils/app_colors.dart';
 import 'package:flutter_studio/core/widgets/home_activity_list_item.dart';
 
@@ -93,10 +95,31 @@ class HomeActivity extends StatelessWidget {
     final List<String> platforms = List<String>.from(result['platforms']);
     final String androidLanguage = result['androidLanguage'];
 
-    String? directory = await FilePicker.getDirectoryPath();
-    if (directory == null || !context.mounted) return;
+    final projectPath = '${TermuxEnv.projectsDir}/$projectName';
 
-    final projectPath = '$directory/$projectName';
+    if (await Directory(projectPath).exists()) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Project '$projectName' already exists"),
+          backgroundColor: AppColors.orange,
+        ),
+      );
+      return;
+    }
+
+    final languages = LanguageRegistry.all;
+    if (languages.isEmpty) return;
+    final language = languages.first;
+
+    if (!context.mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const _LoadingDialog(),
+    );
+
+    await Directory(TermuxEnv.projectsDir).create(recursive: true);
 
     final args = [
       'create',
@@ -115,29 +138,46 @@ class HomeActivity extends StatelessWidget {
       projectPath,
     ];
 
-    final languages = LanguageRegistry.all;
-    if (languages.isEmpty) return;
-    final language = languages.first;
+    try {
+      final proc = await TermuxEnv.start(
+        TermuxEnv.flutterBin,
+        args,
+        workingDirectory: TermuxEnv.projectsDir,
+      );
+      final exitCode = await proc.exitCode;
 
-    final success = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => FlutterProjectCreationProgressDialog(
-        args: args,
-        projectPath: projectPath,
-      ),
-    );
+      if (!context.mounted) return;
+      Navigator.of(context).pop();
 
-    if (success != true || !context.mounted) return;
-
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => EditorPage(
-          language: language,
-          workspaceDirectory: projectPath,
+      if (exitCode == 0) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => EditorPage(
+              language: language,
+              workspaceDirectory: projectPath,
+            ),
+          ),
+        );
+      } else {
+        final stderr = await proc.stderr.transform(utf8.decoder).join();
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(stderr.isNotEmpty ? stderr : "flutter create failed"),
+            backgroundColor: AppColors.danger,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!context.mounted) return;
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Error: $e"),
+          backgroundColor: AppColors.danger,
         ),
-      ),
-    );
+      );
+    }
   }
 
   Future<void> _openProject(BuildContext context) async {
@@ -154,6 +194,36 @@ class HomeActivity extends StatelessWidget {
         builder: (_) => EditorPage(
           language: language,
           workspaceDirectory: directory,
+        ),
+      ),
+    );
+  }
+}
+
+class _LoadingDialog extends StatelessWidget {
+  const _LoadingDialog();
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: AppColors.vscodeBackground,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(
+              width: 32,
+              height: 32,
+              child: CircularProgressIndicator(strokeWidth: 3),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              "Creating Flutter Project...",
+              style: TextStyle(color: AppColors.white, fontSize: 15),
+            ),
+          ],
         ),
       ),
     );

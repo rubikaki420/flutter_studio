@@ -8,6 +8,8 @@ class TermuxEnv {
   static const String home = '/data/data/com.vault.fide/files/home';
   static const String javaHome = '$prefix/lib/jvm/java-21-openjdk';
   static const String androidHome = '$prefix/opt/android-sdk';
+  static const String flutterBin = '$prefix/opt/flutter/bin/flutter';
+  static const String projectsDir = '/storage/emulated/0/AndroidIDEProjects';
 
   static const String path = '$basePath'
       ':$androidHome/cmdline-tools/bin'
@@ -31,7 +33,7 @@ class TermuxEnv {
     String executable,
     List<String> arguments, {
     String? workingDirectory,
-    bool runInShell = true,
+    bool runInShell = false,
   }) {
     return Process.start(
       executable,
