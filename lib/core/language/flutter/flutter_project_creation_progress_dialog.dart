@@ -40,7 +40,7 @@ class _FlutterProjectCreationProgressDialogState
 
   Future<void> _runProcess() async {
     try {
-      final process = await TermuxEnv.start('flutter', widget.args);
+      final process = await TermuxEnv.start(TermuxEnv.flutterBin, widget.args);
 
       process.stdout
           .transform(const SystemEncoding().decoder)

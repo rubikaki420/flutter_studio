@@ -29,12 +29,12 @@ class TermuxEnv {
         'COLORTERM': 'truecolor',
       };
 
-  /// Runs [executable] with [arguments] using Termux's bash.
+  /// Runs [executable] with [arguments] using Termux's bash as a login shell.
   ///
-  /// Using bash directly (not `exec` + kernel shebang resolution) avoids
-  /// ENOENT when the script's `#!` interpreter path doesn't match the
-  /// Termux fork mount point. Bash reads the script as a shell script
-  /// and executes it correctly regardless of shebang mismatches.
+  /// `bash -l` sources profile files (/etc/profile, ~/.bashrc) which set
+  /// the correct PATH and environment variables — the same way the
+  /// Termux terminal does it. Bash reads the script file content
+  /// directly, bypassing kernel shebang resolution entirely.
   static Future<Process> start(
     String executable,
     List<String> arguments, {
@@ -42,7 +42,7 @@ class TermuxEnv {
   }) {
     return Process.start(
       '$prefix/bin/bash',
-      [executable, ...arguments],
+      ['-l', executable, ...arguments],
       environment: environment,
       workingDirectory: workingDirectory,
     );
@@ -55,7 +55,7 @@ class TermuxEnv {
   }) {
     return Process.run(
       '$prefix/bin/bash',
-      [executable, ...arguments],
+      ['-l', executable, ...arguments],
       environment: environment,
       workingDirectory: workingDirectory,
     );
