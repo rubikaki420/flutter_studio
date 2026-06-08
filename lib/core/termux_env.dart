@@ -31,7 +31,7 @@ class TermuxEnv {
     String executable,
     List<String> arguments, {
     String? workingDirectory,
-    bool runInShell = false,
+    bool runInShell = true,
   }) {
     return Process.start(
       executable,

@@ -28,6 +28,7 @@ class _FlutterProjectCreationProgressDialogState
   @override
   void initState() {
     super.initState();
+    _lines.add('\$ flutter ${widget.args.join(' ')}');
     _runProcess();
   }
 
