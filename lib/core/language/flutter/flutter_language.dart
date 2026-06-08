@@ -1,6 +1,3 @@
-import 'flutter_create_project_dialog.dart';
-import 'flutter_project_creation_progress_dialog.dart';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_studio/core/appbar_actions/appbar_action_item.dart';
 import 'package:flutter_studio/core/appbar_actions/appbar_actions_registry.dart';
@@ -109,60 +106,6 @@ class FlutterLanguage extends Language {
     _sessionManager?.dispose();
     state = null;
     await super.dispose(workspacePath);
-  }
-
-  @override
-  Future<String?> createProject({
-    required BuildContext context,
-    required String directory,
-  }) async {
-    final result = await showDialog<Map<String, dynamic>>(
-      context: context,
-      builder: (_) => const FlutterCreateProjectDialog(),
-    );
-
-    if (result == null) return null;
-
-    final String projectName = result['name'];
-    final String template = result['template'];
-    final bool runPub = result['pub'];
-    final bool empty = result['empty'];
-    final String org = result['org'];
-    final String description = result['description'];
-    final List<String> platforms = List<String>.from(result['platforms']);
-    final String androidLanguage = result['androidLanguage'];
-
-    final projectPath = '$directory/$projectName';
-
-    final args = [
-      'create',
-      '-t',
-      template,
-      '--org',
-      org,
-      '--description',
-      description,
-      '--android-language',
-      androidLanguage,
-      if (platforms.isNotEmpty && (template == 'app' || template == 'plugin'))
-        '--platforms=${platforms.join(',')}',
-      if (!runPub) '--no-pub',
-      if (empty) '--empty',
-      projectPath,
-    ];
-
-    final success = await showDialog<bool>(
-      //ignore: use_build_context_synchronously
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => FlutterProjectCreationProgressDialog(
-        args: args,
-        projectPath: projectPath,
-      ),
-    );
-
-    if (success != true) return null;
-    return projectPath;
   }
 }
 

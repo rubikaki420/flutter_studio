@@ -1,6 +1,8 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_studio/core/language/language_registry.dart';
+import 'package:flutter_studio/core/language/flutter/flutter_create_project_dialog.dart';
+import 'package:flutter_studio/core/language/flutter/flutter_project_creation_progress_dialog.dart';
 import 'package:flutter_studio/core/activities/editor_activity/editor_page.dart';
 import 'package:flutter_studio/core/service/native_bridge.dart';
 import 'package:flutter_studio/core/utils/app_colors.dart';
@@ -76,25 +78,63 @@ class HomeActivity extends StatelessWidget {
   }
 
   Future<void> _createProject(BuildContext context) async {
-    final languages = LanguageRegistry.all;
-    if (languages.isEmpty) return;
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (_) => const FlutterCreateProjectDialog(),
+    );
+    if (result == null || !context.mounted) return;
 
-    final language = languages.first;
+    final String projectName = result['name'];
+    final String template = result['template'];
+    final bool runPub = result['pub'];
+    final bool empty = result['empty'];
+    final String org = result['org'];
+    final String description = result['description'];
+    final List<String> platforms = List<String>.from(result['platforms']);
+    final String androidLanguage = result['androidLanguage'];
 
     String? directory = await FilePicker.getDirectoryPath();
     if (directory == null || !context.mounted) return;
 
-    final createdPath = await language.createProject(
+    final projectPath = '$directory/$projectName';
+
+    final args = [
+      'create',
+      '-t',
+      template,
+      '--org',
+      org,
+      '--description',
+      description,
+      '--android-language',
+      androidLanguage,
+      if (platforms.isNotEmpty && (template == 'app' || template == 'plugin'))
+        '--platforms=${platforms.join(',')}',
+      if (!runPub) '--no-pub',
+      if (empty) '--empty',
+      projectPath,
+    ];
+
+    final languages = LanguageRegistry.all;
+    if (languages.isEmpty) return;
+    final language = languages.first;
+
+    final success = await showDialog<bool>(
       context: context,
-      directory: directory,
+      barrierDismissible: false,
+      builder: (_) => FlutterProjectCreationProgressDialog(
+        args: args,
+        projectPath: projectPath,
+      ),
     );
-    if (createdPath == null || !context.mounted) return;
+
+    if (success != true || !context.mounted) return;
 
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => EditorPage(
           language: language,
-          workspaceDirectory: createdPath,
+          workspaceDirectory: projectPath,
         ),
       ),
     );
