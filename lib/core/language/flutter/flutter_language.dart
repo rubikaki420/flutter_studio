@@ -52,7 +52,7 @@ class FlutterLanguage extends Language {
   LanguageInstaller? get installer => FlutterLanguageInstaller();
 
   @override
-  String get executable => 'dart';
+  String get executable => '/data/data/com.vault.fide/files/usr/opt/flutter/bin/dart';
 
   @override
   List<String> get args => const ["language-server", "--protocol-lsp"];

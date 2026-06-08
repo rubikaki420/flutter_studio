@@ -1,10 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_studio/LSP/language_server_manager.dart';
 import 'package:flutter_studio/core/utils/app_colors.dart';
 import 'package:flutter_studio/code_forge.dart';
 import 'package:flutter_studio/core/editor_context.dart';
 import 'package:flutter_studio/core/language/language.dart';
-
+import 'package:flutter_studio/core/language/language_registry.dart';
 import 'package:flutter_studio/core/models/editor_tab_item.dart';
 import 'package:flutter_studio/core/sidebar/sidebar_registry_impl.dart';
 import 'package:flutter_studio/core/sidebar/sidebar_state_controller_impl.dart';
@@ -109,8 +110,10 @@ class _EditorPageState extends State<EditorPage> {
         final content = await file.readAsString();
         final undoController = UndoRedoController();
 
-        // LSP আগে নিন, তারপর controller-এ দিন
-        final lspConfig = await widget.language.startLsp(
+        final extension = p.extension(path).replaceFirst(".", "").toLowerCase();
+        final fileLanguage = LanguageRegistry.getByExtension(extension) ?? widget.language;
+
+        final lspConfig = await fileLanguage.startLsp(
           widget.workspaceDirectory,
         );
 
@@ -257,7 +260,7 @@ class _EditorPageState extends State<EditorPage> {
                                     language: currentTab.mode,
                                     editorTheme: vs2015Theme,
                                   ),
-                                ),
+                              ),
                         ),
                       ],
                     ),
@@ -266,7 +269,6 @@ class _EditorPageState extends State<EditorPage> {
               ),
             ),
 
-            // Bottom Panel
             EditorBottomPanel(
               registry: _bottomRegistry,
               contextData: _editorContext,
@@ -283,6 +285,7 @@ class _EditorPageState extends State<EditorPage> {
     for (var tab in _tabs) {
       tab.codeForgeController.dispose();
     }
+    LanguageServerManager.releaseAll(widget.workspaceDirectory);
     widget.language.dispose(widget.workspaceDirectory);
     super.dispose();
   }

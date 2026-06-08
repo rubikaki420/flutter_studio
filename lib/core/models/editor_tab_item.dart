@@ -2,6 +2,7 @@ import 'package:path/path.dart' as p;
 import 'package:re_highlight/languages/all.dart';
 import 'package:re_highlight/re_highlight.dart';
 import 'package:flutter_studio/core/language/language_registry.dart';
+import 'package:flutter_studio/core/language/language.dart';
 import 'package:flutter_studio/code_forge.dart';
 
 class EditorTabItem {
@@ -25,6 +26,7 @@ class EditorTabItem {
 
   /// extension → languageId (like : 'dart', 'c', 'xml')
   String get languageId => LanguageRegistry.fromExtension(extension);
-
+  Language? get language =>
+    LanguageRegistry.getByExtension(extension);
   Mode? get mode => builtinAllLanguages[languageId];
 }

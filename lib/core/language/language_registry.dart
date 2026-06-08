@@ -56,11 +56,21 @@ class LanguageRegistry {
     'c': 'c',
     'h': 'c',
     'cpp': 'cpp',
+    'hpp': 'cpp',
+    'cc': 'cpp',
+    'hh': 'cpp',
     'dart': 'dart',
     'js': 'javascript',
+    'mjs': 'javascript',
+    'cjs': 'javascript',
     'ts': 'typescript',
+    'tsx': 'typescript',
     'html': 'xml',
+    'htm': 'xml',
     'css': 'css',
+    'py': 'python',
+    "java":"java",
+    "kt":"kotlin"
   };
 
   static String fromExtension(String ext) {

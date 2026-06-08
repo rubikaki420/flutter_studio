@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_studio/core/bottom_bar/bottom_item.dart';
@@ -10,6 +11,9 @@ class WebPreview implements BottomItem {
   FlutterLanguageState? _state;
 
   bool _hasTriedLoad = false;
+  bool _isLoading = false;
+
+  final String _url = "http://localhost:8080";
 
   @override
   String get id => 'editor.flutter.bottom.preview';
@@ -45,14 +49,44 @@ class WebPreview implements BottomItem {
     }
   }
 
-  void _tryLoad() {
-    if (_state?.isAppLaunched == true && _controller != null) {
-      _hasTriedLoad = true;
-
-      _controller!.loadUrl(
-        urlRequest: URLRequest(url: WebUri("http://localhost:8080")),
-      );
+  Future<bool> _checkServer() async {
+    try {
+      final client = HttpClient();
+      final req = await client.getUrl(Uri.parse(_url));
+      final res = await req.close();
+      return res.statusCode == 200;
+    } catch (_) {
+      return false;
     }
+  }
+
+  Future<void> _tryLoad() async {
+    if (_controller == null) return;
+    if (_state?.isAppLaunched != true) return;
+    if (_isLoading) return;
+
+    _isLoading = true;
+
+    for (int i = 0; i < 20; i++) {
+      final ok = await _checkServer();
+
+      if (ok) {
+        _hasTriedLoad = true;
+
+        _controller!.loadUrl(
+          urlRequest: URLRequest(
+            url: WebUri(_url),
+          ),
+        );
+
+        _isLoading = false;
+        return;
+      }
+
+      await Future.delayed(const Duration(seconds: 1));
+    }
+
+    _isLoading = false;
   }
 
   @override
@@ -74,15 +108,20 @@ class WebPreview implements BottomItem {
       );
     }
 
-    return InAppWebView(
-      onWebViewCreated: (controller) {
-        _controller = controller;
-        _tryLoad();
-      },
-      initialSettings: InAppWebViewSettings(
-        javaScriptEnabled: true,
-        cacheEnabled: true,
-      ),
+    return Stack(
+      children: [
+        InAppWebView(
+          onWebViewCreated: (controller) {
+            _controller = controller;
+            _tryLoad();
+          },
+          initialSettings: InAppWebViewSettings(
+            javaScriptEnabled: true,
+            cacheEnabled: true,
+          ),
+        ),
+
+      ],
     );
   }
 
@@ -96,6 +135,5 @@ class WebPreview implements BottomItem {
   Future<void> dispose() async {
     _controller = null;
     _state = null;
-    //super.dispose();
   }
 }

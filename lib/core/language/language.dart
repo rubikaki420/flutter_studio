@@ -41,7 +41,7 @@ abstract class Language {
   }
 
   void stopLsp(String workspacePath) {
-    LanguageServerManager.release(workspacePath);
+    LanguageServerManager.release(languageId, workspacePath);
   }
 
   List<AppbarActionItem> getAppbarActions(EditorContext context) {

@@ -9,7 +9,7 @@ class FlutterLanguageInstaller implements LanguageInstaller {
 
   @override
   Future<bool> isInstalled() async {
-    return PreInstallChecker.isCommandAvailable('flutter', 'flutter');
+    return PreInstallChecker.isCommandAvailable('/data/data/com.vault.fide/files/usr/bin/flutter', '/data/data/com.vault.fide/files/usr/bin/flutter');
   }
 
   @override
@@ -30,35 +30,6 @@ class FlutterLanguageInstaller implements LanguageInstaller {
     }
 
     yield '\n✓ Flutter SDK installed\n';
-
-    // 2. Install Android SDK
-    final androidProcess = await Process.start(
-      '${PreInstallChecker.basePath}/apt',
-      ['install', 'android-sdk', '-y'],
-    );
-
-    yield* androidProcess.stdout.transform(utf8.decoder);
-    yield* androidProcess.stderr.transform(utf8.decoder);
-
-    final androidExit = await androidProcess.exitCode;
-
-    if (androidExit != 0) {
-      throw Exception('Android SDK installation failed');
-    }
-
-    yield '\n✓ Android SDK installed\n';
-
-    // 3. Flutter doctor
-    final doctor = await Process.start('flutter', ['doctor']);
-
-    yield '\nRunning flutter doctor...\n';
-
-    yield* doctor.stdout.transform(utf8.decoder);
-    yield* doctor.stderr.transform(utf8.decoder);
-
-    await doctor.exitCode;
-
-    yield '\n✓ Flutter environment ready\n';
   }
 
   @override
@@ -80,7 +51,7 @@ class FlutterLanguageInstaller implements LanguageInstaller {
   @override
   Future<String?> getVersion() async {
     try {
-      final result = await Process.run('flutter', ['--version']);
+      final result = await Process.run('/data/data/com.vault.fide/files/usr/bin/flutter', ['--version']);
 
       if (result.exitCode != 0) {
         return null;
