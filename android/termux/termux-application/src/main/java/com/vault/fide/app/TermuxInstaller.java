@@ -197,10 +197,20 @@ final class TermuxInstaller {
                                         while ((readBytes = zipInput.read(buffer)) != -1)
                                             outStream.write(buffer, 0, readBytes);
                                     }
+                                    //noinspection OctalInteger
                                     if (zipEntryName.startsWith("bin/") || zipEntryName.startsWith("libexec") ||
                                         zipEntryName.startsWith("lib/apt/apt-helper") || zipEntryName.startsWith("lib/apt/methods")) {
-                                        //noinspection OctalInteger
                                         Os.chmod(targetFile.getAbsolutePath(), 0500);
+                                    } else {
+                                        // Check for ELF binaries (e.g. lib/p7zip/7z) and make them executable
+                                        try (java.io.RandomAccessFile raf = new java.io.RandomAccessFile(targetFile, "r")) {
+                                            byte[] magic = new byte[4];
+                                            if (raf.read(magic) == 4 && magic[0] == 0x7f && magic[1] == 0x45 &&
+                                                magic[2] == 0x4c && magic[3] == 0x46) {
+                                                Os.chmod(targetFile.getAbsolutePath(), 0500);
+                                            }
+                                        } catch (Exception ignored) {
+                                        }
                                     }
                                 }
                             }
