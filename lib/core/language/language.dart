@@ -11,8 +11,6 @@ import '../appbar_actions/standard_actions.dart';
 import '../bottom_bar/bottom_item.dart';
 import '../sidebar/sidebar_contribution.dart';
 import 'package:flutter_studio/core/terminal/session_manager.dart';
-import 'dart:io';
-import 'package:flutter_studio/core/termux_env.dart';
 
 abstract class Language {
   TerminalSessionManager? get sessionManager => null;
@@ -26,7 +24,6 @@ abstract class Language {
   ActionsRegistry get actionsRegistry;
   BottomRegistry get bottomRegistry;
   SidebarRegistry get sidebarRegistry;
-  LanguageInstaller? get installer => null;
   Future<String?> createProject({
     required BuildContext context,
     required String directory,
@@ -64,53 +61,6 @@ abstract class Language {
   Future<void> dispose([String? workspacePath]) async {
     if (workspacePath != null) {
       stopLsp(workspacePath);
-    }
-  }
-}
-
-abstract class LanguageInstaller {
-  String get languageId;
-
-  Future<bool> isInstalled();
-
-  Stream<String> install();
-
-  Stream<String> uninstall();
-
-  Future<String?> getVersion();
-}
-
-class PreInstallChecker {
-  static const String basePath = TermuxEnv.basePath;
-
-  static Future<void> ensureWhichIsInstalled() async {
-    final whichFile = File('$basePath/which');
-    if (whichFile.existsSync()) return;
-
-    try {
-      final process = await TermuxEnv.start('$basePath/apt', [
-        'install',
-        'which',
-        '-y',
-      ]);
-      await process.exitCode;
-    } catch (_) {}
-  }
-
-  static Future<bool> isCommandAvailable(
-    String command,
-    String fallbackBinary, {
-    String? customFallbackPath,
-  }) async {
-    await ensureWhichIsInstalled();
-    try {
-      final result = await TermuxEnv.run('$basePath/which', [command]);
-      return result.exitCode == 0;
-    } catch (_) {
-      if (customFallbackPath != null && File(customFallbackPath).existsSync()) {
-        return true;
-      }
-      return File('$basePath/$fallbackBinary').existsSync();
     }
   }
 }

@@ -5,9 +5,6 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_studio/core/activities/home_activity.dart';
 import 'package:flutter_studio/core/service/app_start_service.dart';
 
-/*
-  This code copied form Cloude Ai
-*/
 const _cSideBar = Color(0xFF1E1E1E);
 const _cBackground = Color(0xFF252526);
 const _cHover = Color(0xFF3C3C3C);
@@ -33,12 +30,10 @@ class _IntroGateState extends State<IntroGate> {
   }
 
   Future<void> _decide() async {
-    // Build a list of which slides are already done.
     final List<bool> done = await _checkAllSlides();
 
     if (!mounted) return;
 
-    // If every slide is satisfied, go straight to Home.
     if (done.every((d) => d)) {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const HomeActivity()),
@@ -46,7 +41,6 @@ class _IntroGateState extends State<IntroGate> {
       return;
     }
 
-    // Otherwise launch the intro starting from the first unsatisfied slide.
     final int startIndex = done.indexWhere((d) => !d);
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
@@ -75,11 +69,9 @@ Future<List<bool>> _checkAllSlides() async {
 Future<bool> _isSlideComplete(_Slide slide) async {
   switch (slide.kind) {
     case _SlideKind.permission:
-      // .status never triggers a dialog — safe to call anytime.
       final status = await slide.permission!.status;
       return status.isGranted;
     case _SlideKind.termux:
-      // isTermuxReady() is async in AppStartService (reads SharedPreferences).
       return await AppStartService.isTermuxReady();
   }
 }
@@ -125,38 +117,12 @@ const _slides = <_Slide>[
     doneLabel: 'Storage access granted',
   ),
   _Slide(
-    icon: '🔔',
-    title: 'Stay in the\nLoop',
-    subtitle: 'Notification Access',
-    description:
-        'Get notified when your builds finish, errors occur, or long-running '
-        'Termux tasks complete — even when the app is in the background.',
-    accent: _cGreen,
-    kind: _SlideKind.permission,
-    permission: Permission.notification,
-    pendingLabel: 'Allow Notifications',
-    doneLabel: 'Notifications enabled',
-  ),
-  _Slide(
-    icon: '📇',
-    title: 'Build &\nConnect',
-    subtitle: 'Contacts Permission',
-    description:
-        'Contact read permission lets you share projects and collaborate with '
-        'teammates directly from your address book inside the IDE.',
-    accent: _cMauve,
-    kind: _SlideKind.permission,
-    permission: Permission.contacts,
-    pendingLabel: 'Allow Contacts Access',
-    doneLabel: 'Contacts access granted',
-  ),
-  _Slide(
     icon: '⚡',
     title: 'Power Up\nTermux',
     subtitle: 'First-Launch Setup',
     description:
         'Flutter Studio uses Termux to compile and run your code. Tap below '
-        'to install packages and configure the environment — this only happens once.',
+        'to install packages and configure the environment.',
     accent: _cPeach,
     kind: _SlideKind.termux,
     pendingLabel: 'Initialize Termux',
@@ -235,18 +201,8 @@ class _IntroScreenState extends State<IntroScreen>
     PermissionStatus status;
 
     if (slide.permission == Permission.manageExternalStorage) {
-      // Try MANAGE_EXTERNAL_STORAGE first, fall back to READ/WRITE storage.
       status = await Permission.manageExternalStorage.request();
       if (!status.isGranted) status = await Permission.storage.request();
-    } else if (slide.permission == Permission.notification) {
-      // Android 13+ (API 33): POST_NOTIFICATIONS must be requested explicitly.
-      // On older versions .request() is a no-op and returns isGranted = true.
-      status = await Permission.notification.request();
-      // If permanently denied, open Settings so the user can flip it manually.
-      if (status.isPermanentlyDenied && mounted) {
-        await openAppSettings();
-        status = await Permission.notification.status;
-      }
     } else {
       status = await slide.permission!.request();
       if (status.isPermanentlyDenied && mounted) {
@@ -266,8 +222,6 @@ class _IntroScreenState extends State<IntroScreen>
     });
     try {
       await AppStartService.handleFirstLaunchFlow();
-      // Verify using the same source of truth as IntroGate so this slide
-      // is never shown again once Termux has been initialized.
       final ready = await AppStartService.isTermuxReady();
       if (mounted) {
         setState(() {
@@ -394,7 +348,6 @@ class _SlidePage extends StatelessWidget {
           children: [
             const SizedBox(height: 52),
 
-            // Icon badge
             ScaleTransition(
               scale: cardScale,
               child: FadeTransition(
@@ -404,7 +357,6 @@ class _SlidePage extends StatelessWidget {
             ),
             const SizedBox(height: 32),
 
-            // Title
             FadeTransition(
               opacity: cardFade,
               child: Text(
@@ -420,14 +372,12 @@ class _SlidePage extends StatelessWidget {
             ),
             const SizedBox(height: 10),
 
-            // Subtitle chip
             FadeTransition(
               opacity: cardFade,
               child: _Chip(label: slide.subtitle, accent: slide.accent),
             ),
             const SizedBox(height: 26),
 
-            // Description card
             ScaleTransition(
               scale: cardScale,
               child: FadeTransition(
@@ -437,7 +387,6 @@ class _SlidePage extends StatelessWidget {
             ),
             const SizedBox(height: 32),
 
-            // Action button
             FadeTransition(
               opacity: cardFade,
               child: _ActionBtn(
@@ -533,7 +482,6 @@ class _DescCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Accent left bar
           Container(
             width: 3,
             height: 72,
@@ -720,7 +668,6 @@ class _BottomBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Progress dots
           Row(
             children: List.generate(total, (i) {
               final isActive = i == current;
@@ -767,7 +714,6 @@ class _BottomBar extends StatelessWidget {
 
           const SizedBox(width: 10),
 
-          // Next / Get Started button
           GestureDetector(
             onTap: onNext,
             child: AnimatedContainer(

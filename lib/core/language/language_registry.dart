@@ -53,14 +53,7 @@ class LanguageRegistry {
   }
 
   static final Map<String, String> extensionMap = {
-    'c': 'c',
-    'h': 'c',
-    'cpp': 'cpp',
     'dart': 'dart',
-    'js': 'javascript',
-    'ts': 'typescript',
-    'html': 'xml',
-    'css': 'css',
   };
 
   static String fromExtension(String ext) {

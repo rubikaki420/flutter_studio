@@ -17,8 +17,6 @@ import 'package:flutter_studio/core/sidebar/explorer/explorer_nav_item.dart';
 import 'package:flutter_studio/core/sidebar/explorer/explorer_panel.dart';
 import 'package:flutter_studio/core/terminal/session_manager.dart';
 
-import 'flutter_language_installer.dart';
-
 import 'appbar/run_project.dart';
 import 'appbar/hot_reload.dart';
 import 'appbar/hot_restart.dart';
@@ -47,9 +45,6 @@ class FlutterLanguage extends Language {
 
   @override
   List<String> get extensions => const ['dart'];
-
-  @override
-  LanguageInstaller? get installer => FlutterLanguageInstaller();
 
   @override
   String get executable => 'dart';
@@ -116,7 +111,6 @@ class FlutterLanguage extends Language {
     await super.dispose(workspacePath);
   }
 
-  // FlutterLanguage class-এর ভেতরে:
   @override
   Future<String?> createProject({
     required BuildContext context,
