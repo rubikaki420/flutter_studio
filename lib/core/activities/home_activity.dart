@@ -118,7 +118,7 @@ class HomeActivity extends StatelessWidget {
     try {
       final proc = await TermuxEnv.start(
         TermuxEnv.templateCreateBin,
-        ['template-create', projectName, pkg],
+        [projectName, pkg],
         workingDirectory: TermuxEnv.projectsDir,
       );
       final exitCode = await proc.exitCode;
