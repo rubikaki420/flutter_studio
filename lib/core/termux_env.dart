@@ -10,6 +10,7 @@ class TermuxEnv {
   static const String androidHome = '$prefix/opt/android-sdk';
   static const String flutterBin = '$prefix/opt/flutter/bin/flutter';
   static const String projectsDir = '/storage/emulated/0/AndroidIDEProjects';
+  static const String templateCreateBin = '$basePath/template-create';
 
   static const String path = '$basePath'
       ':$androidHome/cmdline-tools/bin'

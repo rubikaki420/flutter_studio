@@ -87,13 +87,7 @@ class HomeActivity extends StatelessWidget {
     if (result == null || !context.mounted) return;
 
     final String projectName = result['name'];
-    final String template = result['template'];
-    final bool runPub = result['pub'];
-    final bool empty = result['empty'];
-    final String org = result['org'];
-    final String description = result['description'];
-    final List<String> platforms = List<String>.from(result['platforms']);
-    final String androidLanguage = result['androidLanguage'];
+    final String pkg = result['pkg'];
 
     final projectPath = '${TermuxEnv.projectsDir}/$projectName';
 
@@ -121,27 +115,10 @@ class HomeActivity extends StatelessWidget {
 
     await Directory(TermuxEnv.projectsDir).create(recursive: true);
 
-    final args = [
-      'create',
-      '-t',
-      template,
-      '--org',
-      org,
-      '--description',
-      description,
-      '--android-language',
-      androidLanguage,
-      if (platforms.isNotEmpty && (template == 'app' || template == 'plugin'))
-        '--platforms=${platforms.join(',')}',
-      if (!runPub) '--no-pub',
-      if (empty) '--empty',
-      projectPath,
-    ];
-
     try {
       final proc = await TermuxEnv.start(
-        TermuxEnv.flutterBin,
-        args,
+        TermuxEnv.templateCreateBin,
+        ['template-create', projectName, pkg],
         workingDirectory: TermuxEnv.projectsDir,
       );
       final exitCode = await proc.exitCode;
@@ -163,7 +140,7 @@ class HomeActivity extends StatelessWidget {
         if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(stderr.isNotEmpty ? stderr : "flutter create failed"),
+            content: Text(stderr.isNotEmpty ? stderr : "template-create failed"),
             backgroundColor: AppColors.danger,
           ),
         );
