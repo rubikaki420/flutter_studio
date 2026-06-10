@@ -1,14 +1,21 @@
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import '../language/language.dart';
 import '../activities/editor_activity/editor_page.dart';
 import "install_dialog.dart";
 import 'package:flutter_studio/core/utils/app_colors.dart';
-
+import 'package:flutter_studio/core/utils/project_storage.dart';
+import 'package:file_picker/file_picker.dart';
 class HomeActivityListItem extends StatefulWidget {
   final Language language;
 
-  const HomeActivityListItem({super.key, required this.language});
+  /// Called when the user taps the "recent projects" icon on this language row.
+  final VoidCallback? onOpenRecentProjects;
+
+  const HomeActivityListItem({
+    super.key,
+    required this.language,
+    this.onOpenRecentProjects,
+  });
 
   @override
   State<HomeActivityListItem> createState() => _HomeActivityListItemState();
@@ -45,10 +52,6 @@ class _HomeActivityListItemState extends State<HomeActivityListItem>
     setState(() {});
   }
 
-  Future<String?> _openDirectory() async {
-    String? directory = await FilePicker.getDirectoryPath();
-    return directory;
-  }
 
   void _navigateToEditor(String directory) {
     Navigator.of(context).push(
@@ -85,9 +88,7 @@ class _HomeActivityListItemState extends State<HomeActivityListItem>
   Future<void> showInstallDialog() async {
     final installer = widget.language.installer;
 
-    if (installer == null) {
-      return;
-    }
+    if (installer == null) return;
 
     await showDialog(
       context: context,
@@ -97,7 +98,6 @@ class _HomeActivityListItemState extends State<HomeActivityListItem>
           installer: installer,
           onInstalled: () {
             if (!mounted) return;
-
             setState(() {
               installed = true;
             });
@@ -136,6 +136,11 @@ class _HomeActivityListItemState extends State<HomeActivityListItem>
         ),
       ),
     );
+  }
+  
+  Future<String?> _openDirectory() async {
+    String? directory = await FilePicker.getDirectoryPath();
+    return directory;
   }
 
   @override
@@ -188,24 +193,22 @@ class _HomeActivityListItemState extends State<HomeActivityListItem>
             sizeFactor: animation,
             child: Row(
               children: [
+                // ── Open Existing ──────────────────────────────
                 Expanded(
                   child: InkWell(
-                    onTap: () async {
-                      String? directory = await _openDirectory();
-                      if (directory != null) {
-                        _navigateToEditor(directory);
-                      }
-                    },
+                    onTap: () => widget.onOpenRecentProjects?.call(),
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       alignment: Alignment.center,
                       child: const Text(
-                        "Open Existing project",
+                        "Open Existing Project",
                         style: TextStyle(color: AppColors.white),
                       ),
                     ),
                   ),
                 ),
+
+                // ── Create New ────────────────────────────────
                 Expanded(
                   child: InkWell(
                     onTap: () async {
@@ -218,14 +221,16 @@ class _HomeActivityListItemState extends State<HomeActivityListItem>
                         directory: directory,
                       );
                       if (createdPath == null) return;
-
+                      await ProjectStorage.saveProject(
+                          directory, widget.language.displayName);
                       _navigateToEditor(createdPath);
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       color: AppColors.blue,
                       alignment: Alignment.center,
-                      child: Text("Create new ${language.displayName} project"),
+                      child: Text(
+                          "Create new ${language.displayName} project"),
                     ),
                   ),
                 ),
