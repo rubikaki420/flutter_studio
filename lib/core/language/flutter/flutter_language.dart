@@ -48,7 +48,7 @@ class FlutterLanguage extends Language {
   String get executable => 'dart';
 
   @override
-  List<String> get args => const ["language-server", "--protocol-lsp"];
+  List<String> get args => const ["language-server", "--protocol=lsp"];
 
   @override
   final ActionsRegistry actionsRegistry = ActionsRegistryImpl();

@@ -146,7 +146,11 @@ class TerminalBottomItem extends ChangeNotifier implements BottomItem {
 
         // Flush any commands queued before channel was ready
         for (final cmd in _pendingCommands) {
-          _channel!.invokeMethod('sendCommand', {'command': cmd});
+          try {
+            await _channel!.invokeMethod('sendCommand', {'command': cmd});
+          } on PlatformException catch (e) {
+            debugPrint('Terminal: flush sendCommand failed — ${e.message}');
+          }
         }
         _pendingCommands.clear();
 

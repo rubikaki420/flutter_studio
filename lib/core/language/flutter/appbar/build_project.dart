@@ -118,10 +118,16 @@ class BuildProject extends AppbarActionItem {
       );
     }
 
-    await sessionManager.executeInSession(
-      terminalId,
-      'cd $workspace && clear && $command',
-    );
+    try {
+      await sessionManager.executeInSession(
+        terminalId,
+        'cd $workspace && clear && $command',
+      );
+    } catch (e) {
+      context.showMessage(message: 'Build failed: $e');
+      lang.state?.setAppRunning(false);
+      return;
+    }
 
     context.bottomRegistry?.selectItemById(terminalId);
     context.actionsRegistry?.refresh();
