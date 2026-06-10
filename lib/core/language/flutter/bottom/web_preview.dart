@@ -1,19 +1,13 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_studio/core/bottom_bar/bottom_item.dart';
 import 'package:flutter_studio/core/editor_context.dart';
 import 'package:flutter_studio/core/language/flutter/flutter_language.dart';
-import 'package:flutter_studio/core/utils/app_colors.dart';
 
 class WebPreview implements BottomItem {
   InAppWebViewController? _controller;
-  FlutterLanguageState? _state;
 
-  bool _hasTriedLoad = false;
-  bool _isLoading = false;
-
-  final String _url = "http://localhost:8080";
+  bool _hasLoaded = false;
 
   @override
   String get id => 'editor.flutter.bottom.preview';
@@ -36,104 +30,116 @@ class WebPreview implements BottomItem {
   @override
   bool get keepAlive => true;
 
+  bool _isAppLaunched(EditorContext context) {
+    final lang = context.language;
+    return lang is FlutterLanguage && (lang.state?.isAppLaunched ?? false);
+  }
+
+  void _tryLoad(EditorContext context) {
+    // debugPrint("Test LOG : TRY LOAD");
+
+    final launched = _isAppLaunched(context);
+
+    //  debugPrint("Test LOG :   - launched=$launched");
+    // debugPrint("Test LOG :   - controller=${_controller != null}");
+    //  debugPrint("Test LOG :   - hasLoaded=$_hasLoaded");
+
+    if (!launched || _controller == null || _hasLoaded) {
+      //  debugPrint("Test LOG : Not ready");
+      return;
+    }
+
+    _hasLoaded = true;
+
+    const url = "http://localhost:8080";
+
+    // debugPrint("Test LOG : LOADING -> $url");
+
+    _controller!.loadUrl(urlRequest: URLRequest(url: WebUri(url)));
+  }
+
   @override
   Future<void> prepare(EditorContext context) async {
+    // debugPrint("Test LOG : prepare() called");
+
     final lang = context.language;
 
     if (lang is FlutterLanguage) {
-      _state = lang.state;
-
-      _state?.addListener(() {
-        _tryLoad();
+      lang.state?.addListener(() {
+        // debugPrint("Test LOG : state changed -> isAppLaunched=${lang.state?.isAppLaunched}");
+        _tryLoad(context);
       });
     }
   }
 
-  Future<bool> _checkServer() async {
-    try {
-      final client = HttpClient();
-      final req = await client.getUrl(Uri.parse(_url));
-      final res = await req.close();
-      return res.statusCode == 200;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  Future<void> _tryLoad() async {
-    if (_controller == null) return;
-    if (_state?.isAppLaunched != true) return;
-    if (_isLoading) return;
-
-    _isLoading = true;
-
-    for (int i = 0; i < 20; i++) {
-      final ok = await _checkServer();
-
-      if (ok) {
-        _hasTriedLoad = true;
-
-        _controller!.loadUrl(
-          urlRequest: URLRequest(
-            url: WebUri(_url),
-          ),
-        );
-
-        _isLoading = false;
-        return;
-      }
-
-      await Future.delayed(const Duration(seconds: 1));
-    }
-
-    _isLoading = false;
-  }
-
   @override
   Widget build(BuildContext context, EditorContext editorContext) {
-    final lang = editorContext.language;
+    // debugPrint("Test LOG : build()");
 
-    final isLaunched =
-        lang is FlutterLanguage && (lang.state?.isAppLaunched ?? false);
+    final launched = _isAppLaunched(editorContext);
 
-    if (!isLaunched && !_hasTriedLoad) {
+    if (!launched && !_hasLoaded) {
       return Container(
-        color: AppColors.vscodeEditor,
+        color: const Color(0xFF0D1117),
         child: const Center(
           child: Text(
             "Run your file to see magic",
-            style: TextStyle(color: AppColors.overlay0),
+            style: TextStyle(color: Color(0xFF6C7086)),
           ),
         ),
       );
     }
 
-    return Stack(
-      children: [
-        InAppWebView(
-          onWebViewCreated: (controller) {
-            _controller = controller;
-            _tryLoad();
-          },
-          initialSettings: InAppWebViewSettings(
-            javaScriptEnabled: true,
-            cacheEnabled: true,
-          ),
-        ),
+    return InAppWebView(
+      initialSettings: InAppWebViewSettings(
+        javaScriptEnabled: true,
+        cacheEnabled: true,
+        useHybridComposition: true,
+      ),
 
-      ],
+      onWebViewCreated: (controller) {
+        _controller = controller;
+        //debugPrint("Test LOG : WebView CREATED");
+
+        //  important: defer to next frame (avoids race condition)
+        Future.microtask(() => _tryLoad(editorContext));
+      },
+
+      onLoadStart: (controller, url) {
+        //debugPrint("⬇Test LOG : LOAD START -> $url");
+      },
+
+      onLoadStop: (controller, url) {
+        // debugPrint("Test LOG : LOAD STOP -> $url");
+      },
+
+      // onLoadError: (controller, url, code, message) {
+      // //  debugPrint("Test LOG : LOAD ERROR -> $message");
+      // },
+      onReceivedError: (controller, request, error) {
+        // debugPrint("Test LOG : RECEIVED ERROR -> ${error.description}");
+      },
+
+      onConsoleMessage: (controller, msg) {
+        //  debugPrint("Test LOG : JS -> ${msg.message}");
+      },
     );
   }
 
   @override
-  Future<void> onSelected(EditorContext context) async {}
+  Future<void> onSelected(EditorContext context) async {
+    //   debugPrint("Test LOG : selected");
+  }
 
   @override
-  Future<void> onUnselected(EditorContext context) async {}
+  Future<void> onUnselected(EditorContext context) async {
+    //  debugPrint("Test LOG : unselected");
+  }
 
   @override
   Future<void> dispose() async {
+    // debugPrint("Test LOG : dispose");
     _controller = null;
-    _state = null;
+    _hasLoaded = false;
   }
 }

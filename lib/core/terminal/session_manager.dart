@@ -9,7 +9,7 @@ class TerminalSessionManager {
   int _terminalCounter = 0;
 
   TerminalSessionManager(this._bottomRegistry);
-  // (Read-only)
+  /// (Read-only)
   List<TerminalSessionController> get sessions => List.unmodifiable(_sessions);
 
   TerminalSessionController? findSessionById(String id) {

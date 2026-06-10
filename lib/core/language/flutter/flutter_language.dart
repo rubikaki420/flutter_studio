@@ -1,6 +1,6 @@
-import 'flutter_create_project_dialog.dart';
-import 'flutter_project_creation_progress_dialog.dart';
-
+import 'dart:io';
+import 'dart:convert';
+import 'package:flutter_studio/core/termux_env.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_studio/core/appbar_actions/appbar_action_item.dart';
 import 'package:flutter_studio/core/appbar_actions/appbar_actions_registry.dart';
@@ -16,10 +16,11 @@ import 'package:flutter_studio/core/sidebar/sidebar_registry_impl.dart';
 import 'package:flutter_studio/core/sidebar/explorer/explorer_nav_item.dart';
 import 'package:flutter_studio/core/sidebar/explorer/explorer_panel.dart';
 import 'package:flutter_studio/core/terminal/session_manager.dart';
-
+import 'package:flutter_studio/core/language/flutter/flutter_create_project_dialog.dart';
 import 'flutter_language_installer.dart';
-
+import 'package:flutter_studio/core/utils/app_colors.dart';
 import 'appbar/run_project.dart';
+import 'appbar/build_project.dart';
 import 'appbar/hot_reload.dart';
 import 'appbar/hot_restart.dart';
 import 'appbar/stop_project.dart';
@@ -35,6 +36,7 @@ class FlutterLanguage extends Language {
   TerminalSessionManager? _sessionManager;
 
   static const String outputTerminalId = 'editor.terminal.output_window';
+  static const String buildTerminalId = 'editor.terminal.build_window';
 
   @override
   TerminalSessionManager? get sessionManager => _sessionManager;
@@ -52,7 +54,8 @@ class FlutterLanguage extends Language {
   LanguageInstaller? get installer => FlutterLanguageInstaller();
 
   @override
-  String get executable => '/data/data/com.vault.fide/files/usr/opt/flutter/bin/dart';
+  String get executable =>
+      '/data/data/com.vault.fide/files/usr/opt/flutter/bin/dart';
 
   @override
   List<String> get args => const ["language-server", "--protocol-lsp"];
@@ -84,6 +87,10 @@ class FlutterLanguage extends Language {
         title: 'Flutter Output',
         sessionId: outputTerminalId,
       );
+      _sessionManager!.createSession(
+        title: 'Build Output',
+        sessionId: buildTerminalId,
+      );
     }
   }
 
@@ -96,6 +103,7 @@ class FlutterLanguage extends Language {
       HotRestart(),
       StopProject(),
       SyncProject(),
+      BuildProject(),
     ];
   }
 
@@ -116,7 +124,6 @@ class FlutterLanguage extends Language {
     await super.dispose(workspacePath);
   }
 
-  // FlutterLanguage class-এর ভেতরে:
   @override
   Future<String?> createProject({
     required BuildContext context,
@@ -127,7 +134,7 @@ class FlutterLanguage extends Language {
       builder: (_) => const FlutterCreateProjectDialog(),
     );
 
-    if (result == null) return null;
+    if (result == null || !context.mounted) return null;
 
     final String projectName = result['name'];
     final String template = result['template'];
@@ -140,35 +147,96 @@ class FlutterLanguage extends Language {
 
     final projectPath = '$directory/$projectName';
 
-    final args = [
-      'create',
-      '-t',
-      template,
-      '--org',
-      org,
-      '--description',
-      description,
-      '--android-language',
-      androidLanguage,
-      if (platforms.isNotEmpty && (template == 'app' || template == 'plugin'))
-        '--platforms=${platforms.join(',')}',
-      if (!runPub) '--no-pub',
-      if (empty) '--empty',
-      projectPath,
-    ];
+    if (await Directory(projectPath).exists()) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Project '$projectName' already exists"),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+      return null;
+    }
 
-    final success = await showDialog<bool>(
-      //ignore: use_build_context_synchronously
+    final flutterPath = await PreInstallChecker.resolveCommandPath('flutter');
+
+    if (flutterPath == null) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Flutter not found. Please install Flutter first."),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return null;
+    }
+
+    final flutterBinDir = File(flutterPath).parent.path;
+
+    if (!context.mounted) return null;
+
+    showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => FlutterProjectCreationProgressDialog(
-        args: args,
-        projectPath: projectPath,
-      ),
+      builder: (_) => const _LoadingDialog(),
     );
 
-    if (success != true) return null;
-    return projectPath;
+    try {
+      await Directory(directory).create(recursive: true);
+
+      final args = [
+        'create',
+        '-t',
+        template,
+        '--org',
+        org,
+        '--description',
+        description,
+        '--android-language',
+        androidLanguage,
+        if (platforms.isNotEmpty && (template == 'app' || template == 'plugin'))
+          '--platforms=${platforms.join(',')}',
+        if (!runPub) '--no-pub',
+        if (empty) '--empty',
+        projectPath,
+      ];
+
+      final proc = await TermuxEnv.start(
+        flutterPath,
+        args,
+        workingDirectory: directory,
+        extraPaths: [flutterBinDir],
+      );
+
+      final exitCode = await proc.exitCode;
+
+      if (!context.mounted) return null;
+      Navigator.of(context).pop();
+
+      if (exitCode == 0) {
+        return projectPath;
+      } else {
+        final stderr = await proc.stderr.transform(utf8.decoder).join();
+        //ignore:use_build_context_synchronously
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(stderr.isNotEmpty ? stderr : 'flutter create failed'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return null;
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+      return null;
+    }
   }
 }
 
@@ -187,5 +255,35 @@ class FlutterLanguageState extends ChangeNotifier {
   void setAppLaunched(bool value) {
     _isAppLaunched = value;
     notifyListeners();
+  }
+}
+
+class _LoadingDialog extends StatelessWidget {
+  const _LoadingDialog();
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: AppColors.vscodeBackground,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(
+              width: 32,
+              height: 32,
+              child: CircularProgressIndicator(strokeWidth: 3),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              "Creating Flutter Project...",
+              style: TextStyle(color: AppColors.white, fontSize: 15),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

@@ -111,7 +111,8 @@ class _EditorPageState extends State<EditorPage> {
         final undoController = UndoRedoController();
 
         final extension = p.extension(path).replaceFirst(".", "").toLowerCase();
-        final fileLanguage = LanguageRegistry.getByExtension(extension) ?? widget.language;
+        final fileLanguage =
+            LanguageRegistry.getByExtension(extension) ?? widget.language;
 
         final lspConfig = await fileLanguage.startLsp(
           widget.workspaceDirectory,
@@ -260,7 +261,7 @@ class _EditorPageState extends State<EditorPage> {
                                     language: currentTab.mode,
                                     editorTheme: vs2015Theme,
                                   ),
-                              ),
+                                ),
                         ),
                       ],
                     ),

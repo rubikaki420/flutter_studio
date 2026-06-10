@@ -69,8 +69,8 @@ class LanguageRegistry {
     'htm': 'xml',
     'css': 'css',
     'py': 'python',
-    "java":"java",
-    "kt":"kotlin"
+    "java": "java",
+    "kt": "kotlin",
   };
 
   static String fromExtension(String ext) {

@@ -80,20 +80,36 @@ abstract class LanguageInstaller {
 }
 
 class PreInstallChecker {
-  static const String basePath = '/data/data/com.vault.fide/files/usr/bin';
+  static const String prefix = '/data/data/com.vault.fide/files/usr';
 
-  static Future<void> ensureWhichIsInstalled() async {
-    final whichFile = File('$basePath/which');
-    if (whichFile.existsSync()) return;
+  static const String binPath = '$prefix/bin';
+  static const String basePath = binPath;
 
-    try {
-      final process = await Process.start('$basePath/apt', [
-        'install',
-        'which',
-        '-y',
-      ]);
-      await process.exitCode;
-    } catch (_) {}
+  static const String home = '/data/data/com.vault.fide/files/home';
+
+  static Future<ProcessResult> _runShell(String command) async {
+    final wrappedCommand =
+        '''
+      export HOME="$home"
+      export PREFIX="$prefix"
+      export PATH="$binPath"
+      set +e
+      command_not_found_handle() { return 127; }
+      [ -f $prefix/etc/bash.bashrc ] && source $prefix/etc/bash.bashrc 2>/dev/null
+      [ -f $home/.bashrc ] && source $home/.bashrc 2>/dev/null
+      $command
+    ''';
+
+    return await Process.run(
+      '$binPath/bash',
+      ['-c', wrappedCommand],
+      environment: {
+        'PATH': binPath,
+        'HOME': home,
+        'PREFIX': prefix,
+        'LD_LIBRARY_PATH': '$prefix/lib',
+      },
+    );
   }
 
   static Future<bool> isCommandAvailable(
@@ -101,15 +117,33 @@ class PreInstallChecker {
     String fallbackBinary, {
     String? customFallbackPath,
   }) async {
-    await ensureWhichIsInstalled();
     try {
-      final result = await Process.run('$basePath/which', [command]);
-      return result.exitCode == 0;
+      final result = await _runShell('which $command');
+      final stdout = (result.stdout ?? '').toString().trim();
+
+      return result.exitCode == 0 && stdout.isNotEmpty;
     } catch (_) {
-      if (customFallbackPath != null && File(customFallbackPath).existsSync()) {
-        return true;
-      }
-      return File('$basePath/$fallbackBinary').existsSync();
+      return false;
     }
+  }
+
+  static Future<String?> resolveCommandPath(String command) async {
+    try {
+      final result = await _runShell('which $command');
+
+      final path = (result.stdout ?? '').toString().trim();
+
+      if (result.exitCode == 0 && path.isNotEmpty) {
+        return path;
+      }
+
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static bool fallbackExists(String binary) {
+    return File('$binPath/$binary').existsSync();
   }
 }

@@ -65,7 +65,6 @@ class _FlutterCreateProjectDialogState
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header
                 Row(
                   children: [
                     Image.asset(
@@ -86,22 +85,18 @@ class _FlutterCreateProjectDialogState
                 ),
                 const SizedBox(height: 22),
 
-                // Project name
                 _label('Project Name'),
                 _textField(_nameController),
                 const SizedBox(height: 14),
 
-                // Org
                 _label('Organization'),
                 _textField(_orgController, hint: 'com.example'),
                 const SizedBox(height: 14),
 
-                // Description
                 _label('Description'),
                 _textField(_descController),
                 const SizedBox(height: 18),
 
-                // Template
                 _label('Template'),
                 const SizedBox(height: 8),
                 ..._templates.map(
@@ -115,7 +110,6 @@ class _FlutterCreateProjectDialogState
                 ),
                 const SizedBox(height: 18),
 
-                // Platforms
                 if (_showPlatforms) ...[
                   _label('Platforms'),
                   const SizedBox(height: 8),
@@ -166,7 +160,6 @@ class _FlutterCreateProjectDialogState
                   const SizedBox(height: 18),
                 ],
 
-                // Android language
                 _label('Android Language'),
                 const SizedBox(height: 8),
                 Row(
@@ -186,7 +179,6 @@ class _FlutterCreateProjectDialogState
                 ),
                 const SizedBox(height: 14),
 
-                // Toggles
                 _Toggle(
                   label: 'Run pub get after creation',
                   value: _runPub,
@@ -201,7 +193,6 @@ class _FlutterCreateProjectDialogState
 
                 const SizedBox(height: 24),
 
-                // Actions
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [

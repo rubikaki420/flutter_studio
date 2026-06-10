@@ -6,7 +6,6 @@ import 'package:flutter_studio/core/language/flutter/flutter_language.dart';
 import 'package:flutter_studio/core/terminal/terminal_bottom_item.dart';
 
 class BuildProject extends AppbarActionItem {
-  static const String outputTerminalId = 'editor.terminal.output_window';
   static const String _buildSuccessPattern = 'Built build';
   static const String _aabSuccessPattern = 'appbundle written';
   static const String _flutterErrorPattern = 'No command flutter found';
@@ -72,13 +71,13 @@ class BuildProject extends AppbarActionItem {
     if (config == null) return;
 
     final workspace = context.workspaceDirectory!;
-    final terminalId = outputTerminalId;
+    final terminalId = FlutterLanguage.buildTerminalId;
 
     final command = _buildCommand(config);
 
     lang.state?.setAppRunning(true);
 
-    final terminal = context.bottomRegistry?.findItem(outputTerminalId);
+    final terminal = context.bottomRegistry?.findItem(FlutterLanguage.buildTerminalId);
 
     if (terminal is TerminalBottomItem) {
       await terminal.watchPattern(
@@ -119,7 +118,7 @@ class BuildProject extends AppbarActionItem {
     }
 
     await sessionManager.executeInSession(
-      terminalId,
+      FlutterLanguage.buildTerminalId,
       'cd $workspace && clear && $command',
     );
 

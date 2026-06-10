@@ -26,7 +26,6 @@ class EditorTabItem {
 
   /// extension → languageId (like : 'dart', 'c', 'xml')
   String get languageId => LanguageRegistry.fromExtension(extension);
-  Language? get language =>
-    LanguageRegistry.getByExtension(extension);
+  Language? get language => LanguageRegistry.getByExtension(extension);
   Mode? get mode => builtinAllLanguages[languageId];
 }

@@ -52,7 +52,6 @@ class _DartCreateProjectDialogState extends State<DartCreateProjectDialog> {
                 ),
                 const SizedBox(height: 20),
 
-                // Project name
                 const Text(
                   'Project Name',
                   style: TextStyle(color: AppColors.white, fontSize: 13),
@@ -75,7 +74,6 @@ class _DartCreateProjectDialogState extends State<DartCreateProjectDialog> {
                 ),
                 const SizedBox(height: 20),
 
-                // Template selector
                 const Text(
                   'Template',
                   style: TextStyle(color: AppColors.white, fontSize: 13),
@@ -92,7 +90,6 @@ class _DartCreateProjectDialogState extends State<DartCreateProjectDialog> {
                 ),
                 const SizedBox(height: 16),
 
-                // Run pub get toggle
                 Row(
                   children: [
                     Switch(
@@ -112,7 +109,6 @@ class _DartCreateProjectDialogState extends State<DartCreateProjectDialog> {
                 ),
                 const SizedBox(height: 24),
 
-                // Actions
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [

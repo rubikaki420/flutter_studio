@@ -1,6 +1,6 @@
 import 'package:flutter_studio/LSP/lsp.dart';
 import 'package:flutter_studio/core/language/language.dart';
-
+import 'package:flutter/material.dart';
 class LanguageServerManager {
   LanguageServerManager._();
 
@@ -29,7 +29,7 @@ class LanguageServerManager {
       _instances[key] = config;
       return config;
     } catch (e) {
-      //debugPrint('LSP start failed for $workspacePath: $e');
+      debugPrint('LSP start failed for $workspacePath: $e');
       return null;
     }
   }

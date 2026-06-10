@@ -3,7 +3,6 @@ part of 'lsp.dart';
 /// This class provides a configuration for Language Server Protocol (LSP) using standard input/output communication.
 /// Little bit complex compared to [LspSocketConfig].
 ///
-/// /// Documenation available [here](https://github.com/heckmon/flutter_code_crafter/blob/main/docs/LSPClient.md).
 ///
 /// Example:
 ///

@@ -2,7 +2,6 @@ part of 'lsp.dart';
 
 /// A configuration class for Language Server Protocol (LSP) using WebSocket communication.
 ///
-/// Documenation available [here](https://github.com/heckmon/flutter_code_crafter/blob/main/docs/LSPClient.md).
 ///
 ///Example:
 /// create a [LspSocketConfig] object and pass it to the [CodeForge] widget.

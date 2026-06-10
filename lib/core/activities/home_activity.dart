@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_studio/core/utils/app_colors.dart';
 import 'package:flutter_studio/core/widgets/home_activity_list_item.dart';
 import '../language/language_registry.dart';
-
+import 'package:flutter_studio/core/service/native_bridge.dart';
 class HomeActivity extends StatelessWidget {
   const HomeActivity({super.key});
 
@@ -16,6 +16,14 @@ class HomeActivity extends StatelessWidget {
       appBar: AppBar(
         title: const Text("Flutter Studio"),
         backgroundColor: AppColors.vscodeBackground,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.terminal),
+            onPressed: () {
+              NativeBridge.openTermuxActivity(),
+            },
+          ),
+        ],
       ),
 
       body: ListView.separated(

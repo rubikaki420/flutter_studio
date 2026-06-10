@@ -213,6 +213,7 @@ class _HomeActivityListItemState extends State<HomeActivityListItem>
                       if (directory == null) return;
                       //ignore: use_build_context_synchronously
                       final createdPath = await language.createProject(
+                        //ignore: use_build_context_synchronously
                         context: context,
                         directory: directory,
                       );

@@ -9,7 +9,8 @@ class FlutterLanguageInstaller implements LanguageInstaller {
 
   @override
   Future<bool> isInstalled() async {
-    return PreInstallChecker.isCommandAvailable('/data/data/com.vault.fide/files/usr/bin/flutter', '/data/data/com.vault.fide/files/usr/bin/flutter');
+    //  return PreInstallChecker.isCommandAvailable('/data/data/com.vault.fide/files/usr/opt/flutter/bin/flutter', '/data/data/com.vault.fide/files/usr/opt/flutter/bin/flutter');
+    return PreInstallChecker.isCommandAvailable("flutter", "flutter");
   }
 
   @override
@@ -51,7 +52,10 @@ class FlutterLanguageInstaller implements LanguageInstaller {
   @override
   Future<String?> getVersion() async {
     try {
-      final result = await Process.run('/data/data/com.vault.fide/files/usr/bin/flutter', ['--version']);
+      final result = await Process.run(
+        '/data/data/com.vault.fide/files/usr/opt/flutter/bin/flutter',
+        ['--version'],
+      );
 
       if (result.exitCode != 0) {
         return null;
