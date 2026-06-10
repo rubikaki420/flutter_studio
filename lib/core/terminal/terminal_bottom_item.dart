@@ -123,7 +123,7 @@ class TerminalBottomItem extends ChangeNotifier implements BottomItem {
       creationParams: const <String, dynamic>{},
       creationParamsCodec: const StandardMessageCodec(),
       hitTestBehavior: PlatformViewHitTestBehavior.opaque,
-      onPlatformViewCreated: (int id) {
+      onPlatformViewCreated: (int id) async {
         _channel = MethodChannel('com.vault.fide/terminal_control_$id');
 
         _channel!.setMethodCallHandler((MethodCall call) async {

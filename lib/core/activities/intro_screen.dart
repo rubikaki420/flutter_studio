@@ -11,9 +11,7 @@ const _cHover = Color(0xFF3C3C3C);
 const _cText = Color(0xFFCDD6F4);
 const _cSubtext1 = Color(0xFFA6ADC8);
 const _cOverlay0 = Color(0xFF6C7086);
-const _cGreen = Color(0xFFA6E3A1);
 const _cBlue = Color(0xFF89B4FA);
-const _cMauve = Color(0xFFCBA6F7);
 const _cPeach = Color(0xFFFAB387);
 
 class IntroGate extends StatefulWidget {
