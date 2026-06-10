@@ -127,88 +127,33 @@ class BuildProject extends AppbarActionItem {
     context.actionsRegistry?.refresh();
   }
 
-  Future<_BuildConfig?> _showBuildDialog(BuildContext context) {
-    return showDialog<_BuildConfig>(
+  Future<_BuildType?> _showBuildDialog(BuildContext context) {
+    return showDialog<_BuildType>(
       context: context,
       builder: (ctx) {
         _BuildType? type;
-        final Set<_Abi> abis = {};
 
         return StatefulBuilder(
           builder: (ctx, setState) {
             return AlertDialog(
               title: const Text('Android Build Options'),
-              content: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text("Build Type"),
-                    const SizedBox(height: 10),
-
-                    Wrap(
-                      spacing: 8,
-                      children: [
-                        ChoiceChip(
-                          label: const Text('APK Debug'),
-                          selected: type == _BuildType.apkDebug,
-                          onSelected: (_) =>
-                              setState(() => type = _BuildType.apkDebug),
-                        ),
-                        ChoiceChip(
-                          label: const Text('APK Release'),
-                          selected: type == _BuildType.apkRelease,
-                          onSelected: (_) =>
-                              setState(() => type = _BuildType.apkRelease),
-                        ),
-                        ChoiceChip(
-                          label: const Text('AAB (Play Store)'),
-                          selected: type == _BuildType.aabRelease,
-                          onSelected: (_) =>
-                              setState(() => type = _BuildType.aabRelease),
-                        ),
-                        ChoiceChip(
-                          label: const Text('Split APK'),
-                          selected: type == _BuildType.splitAbi,
-                          onSelected: (_) =>
-                              setState(() => type = _BuildType.splitAbi),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 20),
-                    const Text("Architecture (ABI)"),
-                    const SizedBox(height: 10),
-
-                    Wrap(
-                      spacing: 8,
-                      children: [
-                        ChoiceChip(
-                          label: const Text('arm64-v8a (aarch64)'),
-                          selected: abis.contains(_Abi.arm64),
-                          onSelected: (v) => setState(() {
-                            v ? abis.add(_Abi.arm64) : abis.remove(_Abi.arm64);
-                          }),
-                        ),
-                        ChoiceChip(
-                          label: const Text('armeabi-v7a'),
-                          selected: abis.contains(_Abi.armv7),
-                          onSelected: (v) => setState(() {
-                            v ? abis.add(_Abi.armv7) : abis.remove(_Abi.armv7);
-                          }),
-                        ),
-                        ChoiceChip(
-                          label: const Text('x86_64'),
-                          selected: abis.contains(_Abi.x86_64),
-                          onSelected: (v) => setState(() {
-                            v
-                                ? abis.add(_Abi.x86_64)
-                                : abis.remove(_Abi.x86_64);
-                          }),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ChoiceChip(
+                    label: const Text('Build Debug'),
+                    selected: type == _BuildType.apkDebug,
+                    onSelected: (_) =>
+                        setState(() => type = _BuildType.apkDebug),
+                  ),
+                  const SizedBox(height: 10),
+                  ChoiceChip(
+                    label: const Text('Build Debug Split Per ABI'),
+                    selected: type == _BuildType.splitAbi,
+                    onSelected: (_) =>
+                        setState(() => type = _BuildType.splitAbi),
+                  ),
+                ],
               ),
               actions: [
                 TextButton(
@@ -218,7 +163,7 @@ class BuildProject extends AppbarActionItem {
                 ElevatedButton(
                   onPressed: type == null
                       ? null
-                      : () => Navigator.pop(ctx, _BuildConfig(type!, abis)),
+                      : () => Navigator.pop(ctx, type),
                   child: const Text('Build'),
                 ),
               ],
@@ -229,57 +174,17 @@ class BuildProject extends AppbarActionItem {
     );
   }
 
-  String _buildCommand(_BuildConfig config) {
-    switch (config.type) {
+  String _buildCommand(_BuildType type) {
+    switch (type) {
       case _BuildType.apkDebug:
         return 'flutter build apk --debug';
-
-      case _BuildType.apkRelease:
-        return _buildAbiCommand(config, release: true);
-
-      case _BuildType.aabRelease:
-        return 'flutter build appbundle --release';
-
       case _BuildType.splitAbi:
-        return 'flutter build apk --split-per-abi';
+        return 'flutter build apk --debug --split-per-abi';
     }
-  }
-
-  String _buildAbiCommand(_BuildConfig config, {required bool release}) {
-    final targets = <String>[];
-
-    if (config.abis.contains(_Abi.arm64)) {
-      targets.add('android-arm64');
-    }
-    if (config.abis.contains(_Abi.armv7)) {
-      targets.add('android-arm');
-    }
-    if (config.abis.contains(_Abi.x86_64)) {
-      targets.add('android-x64');
-    }
-
-    if (targets.isEmpty) {
-      return release ? 'flutter build apk --release' : 'flutter build apk';
-    }
-
-    return 'flutter build apk --release --target-platform ${targets.join(',')}';
   }
 
   @override
   Future<void> dispose() async {}
 }
 
-class _BuildConfig {
-  final _BuildType type;
-  final Set<_Abi> abis;
-
-  _BuildConfig(this.type, this.abis);
-}
-
-enum _BuildType { apkDebug, apkRelease, aabRelease, splitAbi }
-
-enum _Abi {
-  arm64, // aarch64
-  armv7,
-  x86_64,
-}
+enum _BuildType { apkDebug, splitAbi }

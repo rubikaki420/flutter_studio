@@ -879,11 +879,15 @@ class _CodeForgeState extends State<CodeForge> with TickerProviderStateMixin {
       }
 
       if (_controller.lspConfig != null) {
-        hoverMessage = await _controller.lspConfig!.getHover(
-          _filePath!,
-          line,
-          character,
-        );
+        try {
+          hoverMessage = await _controller.lspConfig!.getHover(
+            _filePath!,
+            line,
+            character,
+          ).timeout(const Duration(seconds: 5));
+        } catch (_) {
+          hoverMessage = '';
+        }
       }
 
       final result = {

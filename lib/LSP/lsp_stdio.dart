@@ -114,12 +114,10 @@ class LspStdioConfig extends LspConfig {
   }
 
   Future<void> _startProcess() async {
-    _process = await Process.start(
+    _process = await TermuxEnv.start(
       executable,
       args ?? [],
-      environment: environment,
       workingDirectory: workspacePath,
-      runInShell: true,
     );
     _process.stdout.listen(_handleStdoutData);
     _process.stderr.listen((data) => debugPrint(utf8.decode(data)));
@@ -135,9 +133,12 @@ class LspStdioConfig extends LspConfig {
       final headerEnd = _findHeaderEnd();
       if (headerEnd == -1) return;
       final header = utf8.decode(_buffer.sublist(0, headerEnd));
-      final contentLength = int.parse(
-        RegExp(r'Content-Length: (\d+)').firstMatch(header)?.group(1) ?? '0',
-      );
+      final match = RegExp(r'Content-Length: (\d+)').firstMatch(header);
+      if (match == null) {
+        _buffer.clear();
+        return;
+      }
+      final contentLength = int.parse(match.group(1)!);
       if (_buffer.length < headerEnd + 4 + contentLength) return;
       final messageStart = headerEnd + 4;
       final messageEnd = messageStart + contentLength;
@@ -147,10 +148,7 @@ class LspStdioConfig extends LspConfig {
         final json = jsonDecode(utf8.decode(messageBytes));
         _responseController.add(json);
       } catch (e) {
-        throw FormatException(
-          'Invalid JSON message $e',
-          utf8.decode(messageBytes),
-        );
+        debugPrint('LSP invalid JSON: $e');
       }
     }
   }
@@ -181,10 +179,13 @@ class LspStdioConfig extends LspConfig {
     };
     await _sendLspMessage(request);
 
-    return await _responseController.stream.firstWhere(
-      (response) => response['id'] == id,
-      orElse: () => throw TimeoutException('No response for request $id'),
-    );
+    return await _responseController.stream
+        .firstWhere(
+          (response) => response['id'] == id,
+        )
+        .timeout(const Duration(seconds: 10),
+            onTimeout: () =>
+                throw TimeoutException('No response for request $id'));
   }
 
   @override
