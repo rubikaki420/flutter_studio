@@ -46,7 +46,6 @@ class TreeView<T> extends StatefulWidget {
 }
 
 class TreeViewState<T> extends State<TreeView<T>> {
-  // Which node is currently hovered (for hover highlight)
   int? _hoveredId;
 
   void toggleNode(TreeNode<T> node) {
@@ -170,15 +169,12 @@ class TreeViewState<T> extends State<TreeView<T>> {
             ),
           ),
         ),
-        // Children
         if (node.isExpanded && node.children.isNotEmpty)
           _buildNodeList(node.children),
       ],
     );
   }
 }
-
-// ─── Expand/Collapse Arrow ────────────────────────────────
 
 class _ExpandArrow<T> extends StatelessWidget {
   final TreeNode<T> node;

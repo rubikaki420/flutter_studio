@@ -45,6 +45,7 @@ flutter:
     - assets/action_icons/debug.png
     - assets/action_icons/sync.png
     - assets/action_icons/format.png
+    - assets/action_icons/build.png
     - assets/language_icons/lang_c.png
     - assets/language_icons/lang_cpp.png
     - assets/language_icons/dart-original.png

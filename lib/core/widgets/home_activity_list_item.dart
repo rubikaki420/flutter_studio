@@ -193,7 +193,6 @@ class _HomeActivityListItemState extends State<HomeActivityListItem>
             sizeFactor: animation,
             child: Row(
               children: [
-                // ── Open Existing ──────────────────────────────
                 Expanded(
                   child: InkWell(
                     onTap: () => widget.onOpenRecentProjects?.call(),
@@ -208,7 +207,6 @@ class _HomeActivityListItemState extends State<HomeActivityListItem>
                   ),
                 ),
 
-                // ── Create New ────────────────────────────────
                 Expanded(
                   child: InkWell(
                     onTap: () async {
@@ -227,10 +225,12 @@ class _HomeActivityListItemState extends State<HomeActivityListItem>
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      color: AppColors.blue,
                       alignment: Alignment.center,
                       child: Text(
-                          "Create new ${language.displayName} project"),
+                          "Create new ${language.displayName} project",
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: AppColors.white),
+                      ),
                     ),
                   ),
                 ),
