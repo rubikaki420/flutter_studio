@@ -69,6 +69,29 @@ class TermuxEnv {
       workingDirectory: workingDirectory,
     );
   }
+  /// Starts a process directly without using bash.
+  ///
+  /// Unlike `start()`, this method does not wrap the command in a shell.
+  /// It executes the binary directly using `Process.start()`.
+  ///
+  /// Use this for native executables like Dart ELF binaries
+  /// to avoid shell-related issues (e.g. "cannot execute binary file").
+  /// to get more information see `start()`
+  static Future<Process> startPlain(
+    String executable,
+    List<String> arguments, {
+    String? workingDirectory,
+    List<String> extraPaths = const [],
+  }) async {
+    final env = await _buildEnv(extraPaths);
+  
+    return Process.start(
+      executable,
+      arguments,
+      environment: env,
+      workingDirectory: workingDirectory,
+    );
+  }
 
   static Future<ProcessResult> run(
     String executable,
@@ -106,4 +129,9 @@ class TermuxEnv {
     [ -f $home/.bashrc ]           && source $home/.bashrc           2>/dev/null
     $command
   ''';
+  static Future<Map<String, String>> environment({
+    List<String> extraPaths = const [],
+  }) async {
+    return _buildEnv(extraPaths);
+  }
 }

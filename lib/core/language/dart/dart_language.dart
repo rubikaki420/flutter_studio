@@ -23,6 +23,7 @@ import 'dart_create_project_dialog.dart';
 import 'package:flutter_studio/core/utils/app_colors.dart';
 import 'dart:io';
 import 'dart:convert';
+import 'package:flutter_studio/core/termux_env.dart';
 class DartLanguage extends Language {
   TerminalSessionManager? _sessionManager;
 
@@ -45,7 +46,7 @@ class DartLanguage extends Language {
 
   @override
   String get executable =>
-      '/data/data/com.vault.fide/files/usr/opt/flutter/bin/dart';
+      '/data/data/com.vault.fide/files/usr/opt/flutter/bin/cache/dart-sdk/bin/dart';
 
   @override
   List<String> get args => const ["language-server", "--protocol=lsp"];
@@ -160,7 +161,7 @@ Future<String?> createProject({
       projectPath,
     ];
 
-    final proc = await Process.start(
+    final proc = await TermuxEnv.startPlain(
       dartPath,
       args,
       workingDirectory: directory,

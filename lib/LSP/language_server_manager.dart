@@ -1,6 +1,8 @@
 import 'package:flutter_studio/LSP/lsp.dart';
 import 'package:flutter_studio/core/language/language.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_studio/core/termux_env.dart';
+
 class LanguageServerManager {
   LanguageServerManager._();
 
@@ -18,13 +20,14 @@ class LanguageServerManager {
     if (_instances.containsKey(key)) {
       return _instances[key];
     }
-
+    final env = await TermuxEnv.environment();
     try {
       final config = await LspStdioConfig.start(
         executable: language.executable,
         args: language.args,
         workspacePath: workspacePath,
         languageId: language.languageId,
+        environment: env,
       );
       _instances[key] = config;
       return config;
