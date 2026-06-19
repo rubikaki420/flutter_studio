@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_studio/core/appbar_actions/appbar_action_item.dart';
 import 'package:flutter_studio/core/editor_context.dart';
+import 'package:flutter_studio/core/service/apk_installer.dart';
 import 'package:flutter_studio/core/language/flutter/flutter_language.dart';
 import 'package:flutter_studio/core/terminal/terminal_bottom_item.dart';
 
@@ -9,7 +10,7 @@ class BuildProject extends AppbarActionItem {
   static const String _buildSuccessPattern = 'Built build';
   static const String _aabSuccessPattern = 'appbundle written';
   static const String _flutterErrorPattern = 'No command flutter found';
-  static const String _buildErrorPattern = 'Error:';
+  static const String _buildErrorPattern = 'BUILD FAILED';
   @override
   Widget? buildActionView(EditorContext context) => null;
 
@@ -86,6 +87,22 @@ class BuildProject extends AppbarActionItem {
           lang.state?.setAppRunning(false);
           context.actionsRegistry?.refresh();
           context.showMessage(message: 'Build completed successfully');
+          
+          final outputDir = Directory('$workspace/build/app/outputs/flutter-apk');
+          final apkRegex = RegExp(r'app.*\.apk$');
+          
+          if (outputDir.existsSync()) {
+            final apkFile = outputDir
+                .listSync()
+                .whereType<File>()
+                .where((f) => apkRegex.hasMatch(f.path.split('/').last))
+                .toList()
+              ..sort((a, b) => b.statSync().modified.compareTo(a.statSync().modified));
+            
+            if (apkFile.isNotEmpty) {
+              ApkInstaller.installApk(apkFile.first.path);
+            }
+          }
         },
       );
 
@@ -120,6 +137,7 @@ class BuildProject extends AppbarActionItem {
     await sessionManager.executeInSession(
       FlutterLanguage.buildTerminalId,
       'cd $workspace && clear && $command',
+      //'echo "Built build/app/outputs/flutter-apk/app-debug.apk"'
     );
 
     context.bottomRegistry?.selectItemById(terminalId);

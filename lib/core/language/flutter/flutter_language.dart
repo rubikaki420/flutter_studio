@@ -19,6 +19,7 @@ import 'package:flutter_studio/core/sidebar/explorer/explorer_nav_item.dart';
 import 'package:flutter_studio/core/sidebar/explorer/explorer_panel.dart';
 import 'package:flutter_studio/core/terminal/session_manager.dart';
 import 'package:flutter_studio/core/language/flutter/flutter_create_project_dialog.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'flutter_language_installer.dart';
 import 'package:flutter_studio/core/utils/app_colors.dart';
 import 'appbar/run_project.dart';
@@ -94,9 +95,66 @@ class FlutterLanguage extends Language {
         sessionId: buildTerminalId,
       );
     }
-    if(context.workspaceDirectory!=null){
-    await configureWorkspace(context.workspaceDirectory!);
+    if (context.workspaceDirectory != null) {
+      await configureWorkspace(context.workspaceDirectory!);
     }
+    bool isGranted = await Permission.requestInstallPackages.isGranted;
+    if (isGranted) return;
+    BuildContext? ctx = context.context;
+    if (ctx == null) return;
+    showDialog(
+      // ignore: use_build_context_synchronously
+      context: ctx,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: AppColors.vscodeBackground,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(10)),
+          ),
+          title: const Text(
+            'Install Packages',
+            style: TextStyle(color: AppColors.white, fontSize: 15),
+          ),
+          content: const Text(
+            'Flutter Studio needs this permission to install APKs built by your '
+            'project directly onto the device without leaving the IDE.\n\n'
+            'You will be taken to Android Settings where you can allow '
+            '"Install unknown apps" for Flutter Studio.',
+            style: TextStyle(color: AppColors.vscodeLightGrey, fontSize: 13),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text(
+                'Not Now',
+                style: TextStyle(color: AppColors.vscodeGutter, fontSize: 13),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.vscodeFocus,
+                foregroundColor: AppColors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                elevation: 0,
+              ),
+              onPressed: () async {
+                Navigator.pop(context);
+
+                // Open Settings page
+                await Permission.requestInstallPackages.request();
+              },
+              child: const Text('Continue', style: TextStyle(fontSize: 13)),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -159,25 +217,21 @@ class FlutterLanguage extends Language {
 
     return folderNames.first;
   }
-  
+
   Future<void> configureWorkspace(String workspacePath) async {
     const String androidSdkPath =
         '/data/data/com.vault.fide/files/usr/opt/android-sdk';
     const String flutterSdkPath =
         '/data/data/com.vault.fide/files/usr/opt/flutter';
-  
-    final latestNdk = await getLatestVersionDir(
-      '$androidSdkPath/ndk',
-    );
-  
-    final latestCmake = await getLatestVersionDir(
-      '$androidSdkPath/cmake',
-    );
-  
+
+    final latestNdk = await getLatestVersionDir('$androidSdkPath/ndk');
+
+    final latestCmake = await getLatestVersionDir('$androidSdkPath/cmake');
+
     final latestBuildTools = await getLatestVersionDir(
       '$androidSdkPath/build-tools',
     );
-    
+
     try {
       await ConfigFlutterAndroidForFide.startConfigaration(
         workspaceDirectory: workspacePath,

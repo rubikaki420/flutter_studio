@@ -187,7 +187,7 @@ class CodeForge extends StatefulWidget {
 
   /// Whether to show auto completions in the OS virtual keyboard.
   ///
-  /// Defaults to true.
+  /// Defaults to false.
   final bool enableKeyboardSuggestions;
 
   /// The type of the virtual keyboard that will used by the [CodeForge].
@@ -264,7 +264,7 @@ class CodeForge extends StatefulWidget {
     this.enableFolding = true,
     this.enableGuideLines = true,
     this.enableSuggestions = true,
-    this.enableKeyboardSuggestions = true,
+    this.enableKeyboardSuggestions = false,
     this.keyboardType = TextInputType.multiline,
     this.textDirection = TextDirection.ltr,
     this.tabSize,
@@ -340,6 +340,7 @@ class _CodeForgeState extends State<CodeForge> with TickerProviderStateMixin {
 
   @override
   void initState() {
+  print("CodeForge init ${widget.filePath}");
     super.initState();
     _controller = widget.controller ?? CodeForgeController();
 
@@ -915,6 +916,7 @@ class _CodeForgeState extends State<CodeForge> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    print("CodeForge dispose ${widget.filePath}");
     _controller.removeListener(_controllerListener);
     _controller.semanticTokens.removeListener(_semanticTokensListener);
     _lspSignatureNotifier.removeListener(_signatureListener);

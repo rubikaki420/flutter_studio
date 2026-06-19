@@ -3288,6 +3288,7 @@ class CodeForgeController implements DeltaTextInputClient {
   /// Call this method when the controller is no longer needed to prevent
   /// memory leaks.
   void dispose() {
+    print("CodeForgeController disposed");
     _isDisposed = true;
     _semanticTokenTimer?.cancel();
     _debounceTimer?.cancel();

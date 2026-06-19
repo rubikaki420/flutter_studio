@@ -11,6 +11,7 @@ import io.flutter.plugin.common.MethodChannel;
 
 import com.vault.fide.app.LanguageInstaller;
 import com.vault.fide.app.TermuxActivity;
+import java.io.File;
 
 public class MainActivity extends FlutterActivity {
 
@@ -20,23 +21,21 @@ public class MainActivity extends FlutterActivity {
     public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
         super.configureFlutterEngine(flutterEngine);
         flutterEngine
-            .getPlatformViewsController()
-            .getRegistry()
-            .registerViewFactory(
-                "com.vault.fide/terminal_view", 
-                new TerminalViewFactory(flutterEngine.getDartExecutor().getBinaryMessenger())
-            );
+                .getPlatformViewsController()
+                .getRegistry()
+                .registerViewFactory(
+                        "com.vault.fide/terminal_view",
+                        new TerminalViewFactory(flutterEngine.getDartExecutor().getBinaryMessenger())
+                );
         new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), CHANNEL)
                 .setMethodCallHandler((call, result) -> {
-
                     if (call.method.equals("openTermuxActivity")) {
 
-                    Intent intent = new Intent(MainActivity.this, TermuxActivity.class);
-                    startActivity(intent);
+                        Intent intent = new Intent(MainActivity.this, TermuxActivity.class);
+                        startActivity(intent);
 
-                    result.success("opened");
-                    } else
-                    if (call.method.equals("openLanguageInstaller")) {
+                        result.success("opened");
+                    } else if (call.method.equals("openLanguageInstaller")) {
 
                         String command = call.argument("command");
 
@@ -49,6 +48,23 @@ public class MainActivity extends FlutterActivity {
                         startActivity(intent);
 
                         result.success("opened");
+                    } else if ("installApk".equals(call.method)) {
+                        String path = call.argument("path");
+                        if (path == null) {
+                            result.error("INVALID", "Path missing", null);
+                            return;
+                        }
+
+                        InstallationResultReceiver.pendingApkPath = path;
+
+                        File apkFile = new File(path);
+                        ApkInstaller.installApk(
+                                this,
+                                InstallationResultHandler.createEditorActivitySender(this),
+                                apkFile,
+                                null
+                        );
+                        result.success(true);
                     } else {
                         result.notImplemented();
                     }

@@ -6,6 +6,7 @@ plugins {
 }
 
 android {
+
     namespace = "com.vault.fide"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "29.0.14206865"
@@ -22,21 +23,25 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.vault.fide"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 26
         targetSdk = 28
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("common.jks")
+            storePassword = "password"
+            keyAlias = "alias"
+            keyPassword = "password"
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 }
